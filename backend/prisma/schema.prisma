@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String       @id @default(uuid())
+  email        String       @unique
+  passwordHash String
+  vaultPinHash String?      // Hashed PIN for the vault
+  configs      UserConfig[]
+  emails       Email[]
+  privateTags  PrivateTag[] // Relation to locked tags
+  createdAt    DateTime     @default(now())
+}
+
+model UserConfig {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  namespace       String
+  encryptedApiKey String
+  emails          Email[]
+  privateTags     PrivateTag[] // Relation to locked tags
+  createdAt       DateTime @default(now())
+
+  @@unique([userId, namespace])
+}
+
+model Email {
+  id         String   @id @default(uuid())
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
+  configId   String
+  config     UserConfig @relation(fields: [configId], references: [id])
+  testmailId String
+  tag        String
+  subject    String
+  htmlBody   String?
+  isPrivate  Boolean  @default(false)
+  receivedAt DateTime
+
+  @@unique([userId, testmailId])
+  @@index([tag])
+}
+
+model PrivateTag {
+  id        String     @id @default(uuid())
+  tag       String     // The specific tag string (e.g., "nighthawk")
+  userId    String
+  user      User       @relation(fields: [userId], references: [id])
+  configId  String
+  config    UserConfig @relation(fields: [configId], references: [id])
+
+  @@unique([configId, tag]) // A specific tag in a specific namespace can only be locked once
+}
