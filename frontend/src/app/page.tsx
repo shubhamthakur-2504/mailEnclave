@@ -1,4 +1,5 @@
 import React from "react"
+import Link from "next/link"
 
 const features = [
   {
@@ -39,12 +40,12 @@ export default function Home() {
               vault PIN protection, and hardened session handling.
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-              <a href="#features" className="rounded-xl px-5 py-2.5 text-sm font-semibold bg-primary text-primary-foreground transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_36px_rgba(91,106,245,0.28)] active:translate-y-0">
-                Explore Features
-              </a>
-              <a href="#getting-started" className="glass-panel rounded-xl px-5 py-2.5 text-sm font-semibold text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/70 hover:shadow-lg dark:hover:bg-white/10 active:translate-y-0">
-                Getting Started
-              </a>
+              <Link href="/register" className="rounded-xl px-5 py-2.5 text-sm font-semibold bg-primary text-primary-foreground transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_36px_rgba(91,106,245,0.28)] active:translate-y-0">
+                Create account
+              </Link>
+              <Link href="/login" className="glass-panel rounded-xl px-5 py-2.5 text-sm font-semibold text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/70 hover:shadow-lg dark:hover:bg-white/10 active:translate-y-0">
+                Sign in
+              </Link>
             </div>
           </div>
         </section>
