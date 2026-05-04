@@ -1,7 +1,10 @@
 "use client"
 
 import React from "react"
+import { QueryClientProvider } from "@tanstack/react-query"
 import { Toaster } from "@/components/ui/sonner"
+import SessionBootstrapper from "@/components/providers/SessionBootstrapper"
+import { queryClient } from "@/lib/query-client"
 
 type Props = {
   children: React.ReactNode
@@ -9,9 +12,12 @@ type Props = {
 
 export default function ClientProviders({ children }: Props) {
   return (
-    <div className="min-h-screen flex flex-col">
-      {children}
-      <Toaster />
-    </div>
+    <QueryClientProvider client={queryClient}>
+      <div className="min-h-screen flex flex-col">
+        <SessionBootstrapper />
+        {children}
+        <Toaster />
+      </div>
+    </QueryClientProvider>
   )
 }

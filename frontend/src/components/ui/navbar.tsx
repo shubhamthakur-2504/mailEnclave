@@ -3,10 +3,15 @@
 import React, { useEffect, useState } from "react"
 import Link from "next/link"
 import { Moon, Sun } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useAuthStore } from "@/stores/auth-store"
 
 export default function Navbar() {
+  const router = useRouter()
   const [theme, setTheme] = useState<"dark" | "light">("dark")
   const [mounted, setMounted] = useState(false)
+  const user = useAuthStore((state) => state.user)
+  const clearSession = useAuthStore((state) => state.clearSession)
 
   useEffect(() => {
     setMounted(true)
@@ -34,6 +39,12 @@ export default function Navbar() {
     document.documentElement.classList.toggle("dark", next === "dark")
   }
 
+  const handleLogout = () => {
+    clearSession()
+    router.push("/")
+    router.refresh()
+  }
+
   return (
     <nav className="glass-panel sticky top-0 z-50 w-full border-b border-border px-5 md:px-8 py-3 flex items-center justify-between">
       <div className="flex items-center gap-5">
@@ -49,6 +60,31 @@ export default function Navbar() {
       </div>
 
       <div className="flex items-center gap-2">
+        {mounted ? (
+          user ? (
+            <>
+              <span className="hidden md:inline-flex items-center rounded-full border border-border bg-white/35 px-3 py-1 text-xs text-muted-foreground dark:bg-white/5">
+                {user.email}
+              </span>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="hidden sm:inline-flex rounded-full px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <Link href="/login" className="hidden sm:inline-flex rounded-full px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground">
+                Login
+              </Link>
+              <Link href="/register" className="hidden sm:inline-flex rounded-full px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground">
+                Register
+              </Link>
+            </>
+          )
+        ) : null}
         <button
           type="button"
           onClick={toggle}
