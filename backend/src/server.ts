@@ -1,6 +1,8 @@
 import express from 'express';
 import { PORT } from './constants/index.js';
 import healthRouter from './routes/health.js';
+import authRouter from './routes/auth.routes.js';
+import configRouter from './routes/config.routes.js';
 import { connectDB } from './db/database.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 
@@ -10,6 +12,8 @@ app.use(express.json());
 
 app.get('/', (_req, res) => res.json({ service: 'testmail-wrapper', status: 'starting' }));
 app.use('/health', healthRouter);
+app.use('/auth', authRouter);
+app.use('/config', configRouter);
 
 app.use(errorHandler);
 
