@@ -14,6 +14,7 @@ model User {
   configs      UserConfig[]
   emails       Email[]
   privateTags  PrivateTag[] // Relation to locked tags
+  refreshTokens RefreshToken[] // Relation to refresh tokens
   createdAt    DateTime     @default(now())
 }
 
@@ -56,4 +57,20 @@ model PrivateTag {
   config    UserConfig @relation(fields: [configId], references: [id])
 
   @@unique([configId, tag]) // A specific tag in a specific namespace can only be locked once
+}
+
+model RefreshToken {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  tokenHash  String
+  issuedAt   DateTime @default(now())
+  expiresAt  DateTime
+  revoked    Boolean  @default(false)
+  replacedBy String?
+  createdByIp String?
+  userAgent   String?
+
+  @@index([userId])
+  @@index([expiresAt])
 }

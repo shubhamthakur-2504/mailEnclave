@@ -13,3 +13,4 @@ export const JWT_SECRET = getEnv('JWT_SECRET');
 export const ENCRYPTION_KEY = getEnv('ENCRYPTION_KEY'); // expect 32-byte key in hex (64 hex chars) or base64
 export const TESTMAIL_BASE_URL = process.env.TESTMAIL_BASE_URL || 'https://api.testmail.app';
 export const API_TIMEOUT_MS = Number(process.env.API_TIMEOUT_MS || 10000);
+export const IP_HASH_SECRET = getEnv('IP_HASH_SECRET', false);

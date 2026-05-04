@@ -15,5 +15,14 @@
             ]
         },
         "ignoreDeprecations": "6.0"
-    }
+    },
+    "include": [
+        "src/**/*.ts",
+        "src/**/*.d.ts"
+    ],
+    "exclude": [
+        "prisma.config.ts",
+        "dist",
+        "node_modules"
+    ]
 }
