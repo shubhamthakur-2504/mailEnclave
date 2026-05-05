@@ -42,7 +42,7 @@ export const signupUser = async (
     passwordHash,
   });
 
-  // create refresh token
+  // create refresh token and persist, but do not return it in the response
   const refreshSecret = crypto.randomBytes(48).toString('base64url');
   const refreshId = crypto.randomUUID();
   const tokenHash = await bcrypt.hash(refreshSecret, SALT_ROUNDS);
@@ -56,7 +56,6 @@ export const signupUser = async (
     status: 201,
     body: {
       accessToken: jwt.sign({ email: user.email }, JWT_SECRET, { subject: user.id, expiresIn: '7d' }),
-      refreshToken: `${refreshId}.${refreshSecret}`,
       user: {
         id: user.id,
         email: user.email,
@@ -86,7 +85,7 @@ export const loginUser = async (
     };
   }
 
-  // create refresh token
+  // create refresh token and persist, but do not return it in the response
   const refreshSecret = crypto.randomBytes(48).toString('base64url');
   const refreshId = crypto.randomUUID();
   const tokenHash = await bcrypt.hash(refreshSecret, SALT_ROUNDS);
@@ -100,13 +99,29 @@ export const loginUser = async (
     status: 200,
     body: {
       accessToken: jwt.sign({ email: user.email }, JWT_SECRET, { subject: user.id, expiresIn: '7d' }),
-      refreshToken: `${refreshId}.${refreshSecret}`,
       user: {
         id: user.id,
         email: user.email,
       },
     },
   };
+};
+
+// Issue a refresh token for an existing user and return the token string
+export const issueRefreshTokenForUser = async (
+  userId: string,
+  meta?: { ip?: string | null; userAgent?: string | null }
+) => {
+  const refreshSecret = crypto.randomBytes(48).toString('base64url');
+  const refreshId = crypto.randomUUID();
+  const tokenHash = await bcrypt.hash(refreshSecret, SALT_ROUNDS);
+  const now = new Date();
+  const refreshExpires = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+  const ipHash = hashIp(meta?.ip ?? null);
+
+  await createRefreshToken({ id: refreshId, userId, tokenHash, issuedAt: now, expiresAt: refreshExpires, createdByIp: ipHash, userAgent: meta?.userAgent });
+
+  return `${refreshId}.${refreshSecret}`;
 };
 
 export const setupVaultPin = async (input: { userId: string; pin: string }) => {

@@ -1,4 +1,6 @@
 import express from 'express';
+import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import { PORT } from './constants/index.js';
 import healthRouter from './routes/health.js';
 import authRouter from './routes/auth.routes.js';
@@ -9,6 +11,13 @@ import { errorHandler } from './middlewares/errorHandler.js';
 const app = express();
 
 app.use(express.json());
+app.use(cookieParser());
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || true,
+    credentials: true,
+  })
+);
 
 app.get('/', (_req, res) => res.json({ service: 'testmail-wrapper', status: 'starting' }));
 app.use('/health', healthRouter);

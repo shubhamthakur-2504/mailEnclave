@@ -18,12 +18,19 @@ const SALT_ROUNDS = 10;
 // Refresh token rotation endpoint
 export const refreshToken = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const validation = refreshTokenSchema.safeParse(req.body);
-    if (!validation.success) {
-      return res.status(400).json({ error: formatZodErrors(validation.error) });
-    }
+    // Prefer reading refresh token from httpOnly cookie. Fall back to request
+    // body for backward compatibility.
+    const cookieToken = (req as any).cookies?.refreshToken;
+    let token: string | undefined = cookieToken;
 
-    const { refreshToken: token } = validation.data;
+    if (!token) {
+      const validation = refreshTokenSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: formatZodErrors(validation.error) });
+      }
+
+      token = validation.data.refreshToken;
+    }
     const parts = token.split('.');
     if (parts.length !== 2) return res.status(400).json({ error: 'Invalid refresh token format' });
 
@@ -76,7 +83,16 @@ export const refreshToken = async (req: Request, res: Response, next: NextFuncti
     // issue new access token
     const accessToken = jwt.sign({ email: tokenRow.user.email }, JWT_SECRET, { subject: tokenRow.userId, expiresIn: '7d' });
 
-    return res.json({ accessToken, refreshToken: `${newId}.${newSecret}` });
+    // set new refresh token as httpOnly cookie and return access token + user
+    const newRefresh = `${newId}.${newSecret}`;
+    res.cookie('refreshToken', newRefresh, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+
+    return res.json({ accessToken, user: { id: tokenRow.userId, email: tokenRow.user.email } });
   } catch (error) {
     next(error);
   }

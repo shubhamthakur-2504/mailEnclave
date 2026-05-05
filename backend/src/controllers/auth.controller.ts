@@ -1,5 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
-import { loginUser, setupVaultPin, signupUser } from '../services/auth.service.js';
+import { loginUser, setupVaultPin, signupUser, issueRefreshTokenForUser } from '../services/auth.service.js';
+import { revokeAllRefreshTokensForUser } from '../repositories/refresh.repository.js';
+import { findUserById } from '../repositories/user.repository.js';
 import { signupSchema, loginSchema, setupVaultSchema } from '../validators/auth.validator.js';
 import { formatZodErrors } from '../validators/formatErrors.js';
 
@@ -14,6 +16,18 @@ export const signup = async (req: Request, res: Response, next: NextFunction) =>
     const ip = req.ip || (req.headers['x-forwarded-for'] as string | undefined) || null;
     const userAgent = (req.get('user-agent') as string) || null;
     const result = await signupUser({ email, password }, { ip, userAgent });
+    // On success, issue server-side refresh cookie and return session body
+    if (result && result.status >= 200 && result.status < 300 && result.body && (result.body as any).user && (result.body as any).user.id) {
+      const userId = (result.body as any).user.id as string;
+      const issued = await issueRefreshTokenForUser(userId, { ip, userAgent });
+      res.cookie('refreshToken', issued, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+      });
+    }
+
     return res.status(result.status).json(result.body);
   } catch (error) {
     next(error);
@@ -31,6 +45,18 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
     const ip = req.ip || (req.headers['x-forwarded-for'] as string | undefined) || null;
     const userAgent = (req.get('user-agent') as string) || null;
     const result = await loginUser({ email, password }, { ip, userAgent });
+
+    if (result && result.status >= 200 && result.status < 300 && result.body && (result.body as any).user && (result.body as any).user.id) {
+      const userId = (result.body as any).user.id as string;
+      const issued = await issueRefreshTokenForUser(userId, { ip, userAgent });
+      res.cookie('refreshToken', issued, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+      });
+    }
+
     return res.status(result.status).json(result.body);
   } catch (error) {
     next(error);
@@ -54,5 +80,34 @@ export const setupVault = async (req: Request, res: Response, next: NextFunction
     return res.status(result.status).json(result.body);
   } catch (error) {
     next(error);
+  }
+};
+
+export const me = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.userId;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const user = await findUserById(userId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    return res.json({ id: user.id, email: user.email });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const logout = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.userId;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    // Revoke all refresh tokens for the user and clear cookie
+    await revokeAllRefreshTokensForUser(userId);
+    res.clearCookie('refreshToken', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' });
+
+    return res.json({ message: 'Logged out' });
+  } catch (err) {
+    next(err);
   }
 };
