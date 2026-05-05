@@ -5,10 +5,9 @@ import type { AuthSession, AuthUser } from "@/lib/session"
 type AuthStoreState = {
   user: AuthUser | null
   accessToken: string | null
-  refreshToken: string | null
   isReady: boolean
   setSession: (session: AuthSession) => void
-  updateTokens: (tokens: Pick<AuthSession, "accessToken" | "refreshToken">) => void
+  updateTokens: (tokens: Pick<AuthSession, "accessToken">) => void
   clearSession: () => void
   setReady: (value: boolean) => void
 }
@@ -18,29 +17,25 @@ export const useAuthStore = create<AuthStoreState>()(
     (set) => ({
       user: null,
       accessToken: null,
-      refreshToken: null,
       isReady: false,
       setSession: (session) =>
         set({
           user: session.user,
           accessToken: session.accessToken,
-          refreshToken: session.refreshToken,
         }),
       updateTokens: (tokens) =>
         set({
           accessToken: tokens.accessToken,
-          refreshToken: tokens.refreshToken,
         }),
       clearSession: () =>
         set((state) => {
-          if (state.user || state.accessToken || state.refreshToken) {
+          if (state.user || state.accessToken) {
             console.info("[auth] session cleared")
           }
 
           return {
             user: null,
             accessToken: null,
-            refreshToken: null,
           }
         }),
       setReady: (value) => set({ isReady: value }),
@@ -50,7 +45,6 @@ export const useAuthStore = create<AuthStoreState>()(
       partialize: (state) => ({
         user: state.user,
         accessToken: state.accessToken,
-        refreshToken: state.refreshToken,
       }),
     }
   )

@@ -19,7 +19,7 @@ const redirectToLogin = () => {
 
 export const protectedApi = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: false,
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },
@@ -45,17 +45,11 @@ protectedApi.interceptors.response.use(
       return Promise.reject(error)
     }
 
-    const refreshToken = useAuthStore.getState().refreshToken
-    if (!refreshToken) {
-      useAuthStore.getState().clearSession()
-      return Promise.reject(error)
-    }
-
     originalRequest._retry = true
 
     try {
       if (!refreshPromise) {
-        refreshPromise = refreshSessionRequest(refreshToken)
+        refreshPromise = refreshSessionRequest()
       }
 
       await refreshPromise

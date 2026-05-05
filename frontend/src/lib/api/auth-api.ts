@@ -7,11 +7,13 @@ export type AuthCredentials = {
   password: string
 }
 
-type AuthApiResponse = AuthSession
+type AuthApiResponse = {
+  accessToken: string
+  user: { id: string; email: string }
+}
 
 const normalizeSession = (data: AuthApiResponse): AuthSession => ({
   accessToken: data.accessToken,
-  refreshToken: data.refreshToken,
   user: data.user,
 })
 
@@ -29,22 +31,20 @@ export const loginRequest = async (payload: AuthCredentials) => {
   return session
 }
 
-export const refreshSessionRequest = async (refreshTokenArg?: string) => {
-  const refreshToken = refreshTokenArg ?? useAuthStore.getState().refreshToken
-
-  if (!refreshToken) {
-    throw new Error("Missing refresh token")
-  }
-
-  const { data } = await rawApi.post<AuthApiResponse>("/auth/refresh", {
-    refreshToken,
-  })
-
+export const refreshSessionRequest = async () => {
+  const { data } = await rawApi.post<AuthApiResponse>("/auth/refresh")
   const session = normalizeSession(data)
   useAuthStore.getState().setSession(session)
   return session
 }
 
 export const logoutRequest = () => {
+  // Call server to revoke refresh tokens and clear cookie, then clear client session
+  try {
+    void rawApi.post('/auth/logout')
+  } catch {
+    // ignore network errors; still clear client session
+  }
+
   useAuthStore.getState().clearSession()
 }
