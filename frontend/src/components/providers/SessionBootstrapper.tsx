@@ -5,20 +5,25 @@ import { refreshSessionRequest } from "@/lib/api/auth-api"
 import { useAuthStore } from "@/stores/auth-store"
 
 export default function SessionBootstrapper() {
-  const accessToken = useAuthStore((state) => state.accessToken)
   const setReady = useAuthStore((state) => state.setReady)
 
   useEffect(() => {
     const bootstrap = async () => {
-      // If we have no access token, attempt a silent refresh (cookie-based).
+      const publicRoutes = new Set(["/", "/login", "/register"])
+      const pathname = window.location.pathname
+
+      if (publicRoutes.has(pathname)) {
+        setReady(true)
+        return
+      }
+
+      const accessToken = useAuthStore.getState().accessToken
       if (!accessToken) {
         try {
           await refreshSessionRequest()
         } catch {
           useAuthStore.getState().clearSession()
-          if (window.location.pathname !== "/login") {
-            window.location.replace("/login")
-          }
+          window.location.replace("/login")
         }
       }
 
@@ -26,7 +31,8 @@ export default function SessionBootstrapper() {
     }
 
     void bootstrap()
-  }, [accessToken, setReady])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setReady])
 
   return null
 }

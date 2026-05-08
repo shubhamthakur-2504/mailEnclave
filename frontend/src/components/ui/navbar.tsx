@@ -2,16 +2,19 @@
 
 import React, { useEffect, useState } from "react"
 import Link from "next/link"
-import { Moon, Sun } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { Moon, Sun, LogOut } from "lucide-react"
+import { useRouter, usePathname } from "next/navigation"
 import { useAuthStore } from "@/stores/auth-store"
+import { logoutRequest } from "@/lib/api/auth-api"
 
 export default function Navbar() {
   const router = useRouter()
+  const pathname = usePathname()
   const [theme, setTheme] = useState<"dark" | "light">("dark")
   const [mounted, setMounted] = useState(false)
   const user = useAuthStore((state) => state.user)
   const clearSession = useAuthStore((state) => state.clearSession)
+  const isDashboard = pathname.startsWith("/dashboard")
 
   useEffect(() => {
     setMounted(true)
@@ -39,7 +42,14 @@ export default function Navbar() {
     document.documentElement.classList.toggle("dark", next === "dark")
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await logoutRequest()
+    } catch (e) {
+      // proceed to clear session even if logout API failed
+      console.warn('Logout API error', e)
+    }
+
     clearSession()
     router.push("/")
     router.refresh()
@@ -51,6 +61,11 @@ export default function Navbar() {
         <Link href="/" className="font-semibold tracking-tight text-foreground transition-colors duration-200 hover:text-foreground/80">
           Mail<span className="hero-gradient-text">Enclave</span>
         </Link>
+        {mounted && user && !isDashboard && (
+          <Link href="/dashboard" className="hidden md:inline-block text-sm text-muted-foreground transition-all duration-200 hover:-translate-y-0.5 hover:text-foreground">
+            Dashboard
+          </Link>
+        )}
         <Link href="#features" className="hidden md:inline-block text-sm text-muted-foreground transition-all duration-200 hover:-translate-y-0.5 hover:text-foreground">
           Features
         </Link>
@@ -59,21 +74,23 @@ export default function Navbar() {
         </Link>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
         {mounted ? (
           user ? (
-            <>
-              <span className="hidden md:inline-flex items-center rounded-full border border-border bg-white/35 px-3 py-1 text-xs text-muted-foreground dark:bg-white/5">
-                {user.email}
-              </span>
+            <div className="hidden md:flex items-center gap-3">
+              <div className="flex flex-col items-end gap-0.5">
+                <span className="text-xs font-medium text-foreground">{user.email}</span>
+                <span className="text-xs text-muted-foreground">Member</span>
+              </div>
               <button
                 type="button"
                 onClick={handleLogout}
-                className="hidden sm:inline-flex rounded-full px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:bg-white/20 hover:text-foreground dark:hover:bg-white/10"
               >
+                <LogOut className="size-3.5" />
                 Logout
               </button>
-            </>
+            </div>
           ) : (
             <>
               <Link href="/login" className="hidden sm:inline-flex rounded-full px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground">

@@ -1,11 +1,12 @@
 "use client"
 
-import { useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useMutation } from "@tanstack/react-query"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { isAxiosError } from "axios"
 import { ArrowRight, LockKeyhole, Mail } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -44,11 +45,44 @@ const copyMap = {
 const fieldClassName =
   "w-full rounded-xl border border-border bg-white/60 px-4 py-3 text-sm text-foreground shadow-sm outline-none transition-all duration-200 placeholder:text-muted-foreground/70 focus:border-ring focus:bg-white/80 focus:shadow-[0_0_0_4px_rgba(124,135,247,0.12)] dark:bg-white/5 dark:focus:bg-white/10"
 
+const getAuthErrorMessage = (error: unknown) => {
+  if (isAxiosError(error)) {
+    const responseMessage = error.response?.data?.error
+
+    if (typeof responseMessage === "string" && responseMessage.trim()) {
+      if (/invalid credentials/i.test(responseMessage)) {
+        return "Invalid credentials"
+      }
+
+      if (/unauthori[sz]ed/i.test(responseMessage)) {
+        return "Unauthorized"
+      }
+
+      return responseMessage
+    }
+
+    if (error.response?.status === 401) {
+      return "Invalid credentials"
+    }
+
+    if (error.response?.status === 403) {
+      return "Unauthorized"
+    }
+  }
+
+  return "Invalid credentials"
+}
+
 export default function AuthForm({ mode }: AuthFormProps) {
   const router = useRouter()
   const setSession = useAuthStore((state) => state.setSession)
+  const [mounted, setMounted] = useState(false)
   const schema = useMemo(() => (mode === "login" ? loginFormSchema : registerFormSchema), [mode])
   const copy = copyMap[mode]
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const form = useForm<AuthFormValues>({
     resolver: zodResolver(schema as never),
@@ -67,17 +101,34 @@ export default function AuthForm({ mode }: AuthFormProps) {
     onSuccess: (session) => {
       setSession(session)
       toast.success(mode === "login" ? "Signed in successfully" : "Account created successfully")
-      router.push("/")
+      router.push("/dashboard")
       router.refresh()
     },
     onError: (error: unknown) => {
-      const message = error instanceof Error ? error.message : "Something went wrong"
+      const message = getAuthErrorMessage(error)
       toast.error(message)
     },
   })
 
   const onSubmit = form.handleSubmit((values) => mutation.mutate(values))
   const showConfirmPassword = mode === "register"
+
+  if (!mounted) {
+    return (
+      <div className="mx-auto w-full max-w-lg">
+        <section className="glass-card rounded-3xl p-6 md:p-8 transition-all duration-200">
+          <div className="space-y-4 animate-pulse">
+            <div className="h-6 w-56 rounded-full bg-white/20" />
+            <div className="h-10 w-80 rounded-full bg-white/20" />
+            <div className="h-12 w-full rounded-xl bg-white/20" />
+            <div className="h-12 w-full rounded-xl bg-white/20" />
+            {mode === "register" ? <div className="h-12 w-full rounded-xl bg-white/20" /> : null}
+            <div className="h-12 w-full rounded-xl bg-primary/30" />
+          </div>
+        </section>
+      </div>
+    )
+  }
 
   return (
     <div className="mx-auto w-full max-w-lg">
@@ -97,7 +148,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
 
         <h2 className="sr-only">{copy.submitLabel}</h2>
 
-        <form className="space-y-4" onSubmit={onSubmit}>
+        <form className="space-y-4" onSubmit={onSubmit} autoComplete="off">
           <label className="block space-y-2">
             <span className="text-sm font-medium text-foreground flex items-center gap-2">
               <Mail className="size-4 text-muted-foreground" /> Email
@@ -120,7 +171,10 @@ export default function AuthForm({ mode }: AuthFormProps) {
             </span>
             <input
               type="password"
-              autoComplete={mode === "login" ? "current-password" : "new-password"}
+              autoComplete="new-password"
+              data-lpignore="true"
+              data-form-type="other"
+              spellCheck={false}
               className={fieldClassName}
               placeholder="Enter your password"
               {...form.register("password")}
@@ -138,6 +192,9 @@ export default function AuthForm({ mode }: AuthFormProps) {
               <input
                 type="password"
                 autoComplete="new-password"
+                data-lpignore="true"
+                data-form-type="other"
+                spellCheck={false}
                 className={fieldClassName}
                 placeholder="Repeat your password"
                 {...form.register("confirmPassword")}
