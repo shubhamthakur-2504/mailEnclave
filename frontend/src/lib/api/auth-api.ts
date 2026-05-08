@@ -38,12 +38,11 @@ export const refreshSessionRequest = async () => {
   return session
 }
 
-export const logoutRequest = () => {
-  // Call server to revoke refresh tokens and clear cookie, then clear client session
+export const logoutRequest = async () => {
   try {
-    void rawApi.post('/auth/logout')
-  } catch {
-    // ignore network errors; still clear client session
+    await rawApi.post('/auth/logout')
+  } catch (e) {
+    console.warn('Logout request failed', e)
   }
 
   useAuthStore.getState().clearSession()
