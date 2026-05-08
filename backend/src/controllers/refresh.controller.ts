@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
-import { JWT_SECRET } from '../constants/index.js';
+import { JWT_SECRET, IS_PROD } from '../constants/index.js';
 import {
   findRefreshTokenById,
   createRefreshToken,
@@ -87,7 +87,7 @@ export const refreshToken = async (req: Request, res: Response, next: NextFuncti
     const newRefresh = `${newId}.${newSecret}`;
     res.cookie('refreshToken', newRefresh, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: IS_PROD,
       sameSite: 'lax',
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });

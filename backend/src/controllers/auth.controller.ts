@@ -3,6 +3,7 @@ import { loginUser, setupVaultPin, signupUser, issueRefreshTokenForUser } from '
 import { revokeAllRefreshTokensForUser, findRefreshTokenById } from '../repositories/refresh.repository.js';
 import { findUserById } from '../repositories/user.repository.js';
 import { signupSchema, loginSchema, setupVaultSchema } from '../validators/auth.validator.js';
+import { IS_PROD } from '../constants/index.js';
 import { formatZodErrors } from '../validators/formatErrors.js';
 
 export const signup = async (req: Request, res: Response, next: NextFunction) => {
@@ -22,7 +23,7 @@ export const signup = async (req: Request, res: Response, next: NextFunction) =>
       const issued = await issueRefreshTokenForUser(userId, { ip, userAgent });
       res.cookie('refreshToken', issued, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: IS_PROD,
         sameSite: 'lax',
         maxAge: 30 * 24 * 60 * 60 * 1000,
       });
@@ -51,7 +52,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
       const issued = await issueRefreshTokenForUser(userId, { ip, userAgent });
       res.cookie('refreshToken', issued, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: IS_PROD,
         sameSite: 'lax',
         maxAge: 30 * 24 * 60 * 60 * 1000,
       });
@@ -115,7 +116,7 @@ export const logout = async (req: Request, res: Response, next: NextFunction) =>
       await revokeAllRefreshTokensForUser(req.userId);
     }
 
-    res.clearCookie('refreshToken', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' });
+    res.clearCookie('refreshToken', { httpOnly: true, secure: IS_PROD, sameSite: 'lax' });
 
     return res.json({ message: 'Logged out' });
   } catch (err) {
