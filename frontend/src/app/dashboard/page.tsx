@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { addConfigRequest, listConfigsRequest } from '@/lib/api/config-api'
+import { addConfigRequest, getConfigEmailsRequest, listConfigsRequest } from '@/lib/api/config-api'
 import Dock from '@/components/dashboard/dock'
 import MailList from '@/components/dashboard/mail-list'
 import NamespacesView from '@/components/dashboard/namespaces-view'
@@ -10,10 +10,11 @@ import PasskeyDialog from '@/components/dashboard/passkey-dialog'
 import TagsPanel from '@/components/dashboard/tags-panel'
 import TopBar from '@/components/dashboard/top-bar'
 import type { DockView, EmailItem, TagItem } from '@/components/dashboard/types'
+import type { UserConfig } from '@/lib/api/config-api'
 
 export default function DashboardPage() {
   const searchRef = useRef<HTMLInputElement>(null)
-  const [namespaces, setNamespaces] = useState<string[]>([])
+  const [configs, setConfigs] = useState<UserConfig[]>([])
   const [activeNamespace, setActiveNamespace] = useState('acme-prod.testmail.app')
   const [activeTag, setActiveTag] = useState<string>('all')
   const [activeView, setActiveView] = useState<DockView>('inbox')
@@ -28,8 +29,14 @@ export default function DashboardPage() {
   const [namespaceError, setNamespaceError] = useState('')
   const [namespaceDialogOpen, setNamespaceDialogOpen] = useState(false)
   const [isSavingNamespace, setIsSavingNamespace] = useState(false)
-  const [emails] = useState<EmailItem[]>([])
+  const [emails, setEmails] = useState<EmailItem[]>([])
+  const [isEmailsLoading, setIsEmailsLoading] = useState(false)
   const isVaultView = activeView === 'vault'
+  const namespaces = useMemo(() => configs.map((config) => config.namespace), [configs])
+  const activeConfig = useMemo(
+    () => configs.find((config) => config.namespace === activeNamespace),
+    [configs, activeNamespace]
+  )
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -50,16 +57,16 @@ export default function DashboardPage() {
     const loadNamespaces = async () => {
       try {
         const configs = await listConfigsRequest()
-        const list = configs.map((config) => config.namespace)
         if (!isMounted) {
           return
         }
-        setNamespaces(list)
+        setConfigs(configs)
         setActiveNamespace((current) => {
-          if (!list.length) {
+          if (!configs.length) {
             return current
           }
-          return list.includes(current) ? current : list[0]
+          const namespaces = configs.map((config) => config.namespace)
+          return namespaces.includes(current) ? current : namespaces[0]
         })
       } catch (error) {
         // keep local state if fetch fails
@@ -73,6 +80,49 @@ export default function DashboardPage() {
   }, [])
 
   useEffect(() => {
+    let isMounted = true
+
+    const loadEmails = async () => {
+      if (!activeConfig) {
+        setEmails([])
+        return
+      }
+
+      try {
+        setIsEmailsLoading(true)
+        const inbox = await getConfigEmailsRequest(activeConfig.id, { limit: 100 })
+        if (!isMounted) {
+          return
+        }
+
+        const mappedEmails: EmailItem[] = inbox.emails.map((email, index) => ({
+          id: email.id ?? `${activeConfig.namespace}-${email.tag ?? 'mail'}-${email.timestamp ?? index}`,
+          tag: email.tag ?? 'untagged',
+          subject: email.subject ?? '(no subject)',
+          namespace: activeConfig.namespace,
+          receivedAt: email.timestamp ? new Date(email.timestamp).toLocaleString() : 'just now',
+          sensitive: false,
+        }))
+
+        setEmails(mappedEmails)
+      } catch (error) {
+        if (isMounted) {
+          setEmails([])
+        }
+      } finally {
+        if (isMounted) {
+          setIsEmailsLoading(false)
+        }
+      }
+    }
+
+    loadEmails()
+    return () => {
+      isMounted = false
+    }
+  }, [activeConfig])
+
+  useEffect(() => {
     if (activeView === 'namespaces') {
       setNamespaceMenuOpen(false)
     }
@@ -80,7 +130,7 @@ export default function DashboardPage() {
 
   const tags = useMemo<TagItem[]>(() => {
     const inNamespace = emails.filter((item) => item.namespace === activeNamespace)
-    const scoped = isVaultView ? inNamespace.filter((item) => item.sensitive) : inNamespace.filter((item) => !item.sensitive)
+    const scoped = inNamespace
     const counts = scoped.reduce<Record<string, number>>((acc, item) => {
       acc[item.tag] = (acc[item.tag] || 0) + 1
       return acc
@@ -102,7 +152,7 @@ export default function DashboardPage() {
 
   const filteredEmails = useMemo(() => {
     const inNamespace = emails.filter((item) => item.namespace === activeNamespace)
-    const scoped = isVaultView ? inNamespace.filter((item) => item.sensitive) : inNamespace.filter((item) => !item.sensitive)
+    const scoped = inNamespace
     const inTag = activeTag === 'all' ? scoped : scoped.filter((item) => item.tag === activeTag)
     const query = search.trim().toLowerCase()
     const matched = query
@@ -159,8 +209,8 @@ export default function DashboardPage() {
     }
     try {
       setIsSavingNamespace(true)
-      await addConfigRequest({ namespace: next, apiKey })
-      setNamespaces((prev) => [...prev, next])
+      const createdConfig = await addConfigRequest({ namespace: next, apiKey })
+      setConfigs((prev) => [...prev, createdConfig])
       setActiveNamespace(next)
       setNewNamespace('')
       setNewApiKey('')
@@ -248,6 +298,7 @@ export default function DashboardPage() {
               activeTag={activeTag}
               isVaultView={isVaultView}
               vaultUnlocked={vaultUnlocked}
+              isLoading={isEmailsLoading}
               onRequirePasskey={promptPasskey}
             />
           </div>

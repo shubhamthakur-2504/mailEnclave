@@ -11,6 +11,7 @@ type MailListProps = {
   activeTag: string
   isVaultView: boolean
   vaultUnlocked: boolean
+  isLoading?: boolean
   onRequirePasskey: () => void
 }
 
@@ -21,6 +22,7 @@ export default function MailList({
   activeTag,
   isVaultView,
   vaultUnlocked,
+  isLoading,
   onRequirePasskey,
 }: MailListProps) {
   const showLockedVaultMessage = activeView === "vault" && !vaultUnlocked
@@ -49,6 +51,10 @@ export default function MailList({
           <KeyRound className="mb-3 size-7 text-rose-300" />
           <p className="mb-1 text-sm font-semibold text-foreground">Vault is locked</p>
           <p className="text-xs text-muted-foreground">Use the Vault control in the dock and pass the challenge.</p>
+        </div>
+      ) : isLoading ? (
+        <div className="rounded-xl border border-dashed border-white/20 p-4 text-center text-sm text-muted-foreground">
+          Loading emails...
         </div>
       ) : (
         <div className="space-y-2">

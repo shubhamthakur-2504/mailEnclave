@@ -21,6 +21,29 @@ export type DashboardStats = {
   email: string
 }
 
+export type TestmailEmail = {
+  id?: string
+  tag?: string
+  subject?: string
+  timestamp?: number
+  text?: string
+  html?: string
+  from?: string
+}
+
+export type TestmailInboxResponse = {
+  result: string
+  message: string | null
+  count: number
+  limit: number
+  offset: number
+  emails: TestmailEmail[]
+  config: {
+    id: string
+    namespace: string
+  }
+}
+
 export const saveTestmailConfig = async (payload: TestmailConfigPayload) => {
   const { data } = await protectedApi.post("/config/testmail", payload)
   return data as { message: string; config: unknown }
@@ -49,4 +72,22 @@ export const deleteConfigRequest = async (id: string) => {
 export const getDashboardStatsRequest = async () => {
   const { data } = await protectedApi.get<{ stats: DashboardStats }>("/config/dashboard/stats")
   return data.stats
+}
+
+export const getConfigEmailsRequest = async (
+  id: string,
+  params?: {
+    tag?: string
+    tag_prefix?: string
+    timestamp_from?: number
+    timestamp_to?: number
+    limit?: number
+    offset?: number
+    livequery?: boolean
+    headers?: boolean
+    spam_report?: boolean
+  }
+) => {
+  const { data } = await protectedApi.get<TestmailInboxResponse>(`/config/${id}/emails`, { params })
+  return data
 }
