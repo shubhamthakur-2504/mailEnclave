@@ -9,3 +9,5 @@ yarn-debug.log*
 yarn-error.log*
 .DS_Store
 .eslintcache
+.vscode/
+frontend/tsconfig.tsbuildinfo
