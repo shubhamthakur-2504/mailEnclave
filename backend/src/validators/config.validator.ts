@@ -5,4 +5,33 @@ export const addTestmailConfigSchema = z.object({
   apiKey: z.string().min(1, 'API key is required'),
 });
 
+const optionalBoolean = z.preprocess((value) => {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+  if (value === true || value === false) {
+    return value;
+  }
+  if (value === 'true') {
+    return true;
+  }
+  if (value === 'false') {
+    return false;
+  }
+  return value;
+}, z.boolean().optional());
+
+export const testmailEmailsQuerySchema = z.object({
+  tag: z.string().min(1).optional(),
+  tag_prefix: z.string().min(1).optional(),
+  timestamp_from: z.coerce.number().int().nonnegative().optional(),
+  timestamp_to: z.coerce.number().int().nonnegative().optional(),
+  limit: z.coerce.number().int().min(0).max(100).optional(),
+  offset: z.coerce.number().int().min(0).optional(),
+  livequery: optionalBoolean,
+  headers: optionalBoolean,
+  spam_report: optionalBoolean,
+});
+
 export type AddTestmailConfigInput = z.infer<typeof addTestmailConfigSchema>;
+export type TestmailEmailsQueryInput = z.infer<typeof testmailEmailsQuerySchema>;

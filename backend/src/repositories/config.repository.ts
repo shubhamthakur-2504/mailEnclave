@@ -25,6 +25,8 @@ export const upsertTestmailConfig = (data: {
     select: {
       id: true,
       namespace: true,
+      lastSyncedAt: true,
+      lastAccessedAt: true,
       createdAt: true,
     },
   });
@@ -36,6 +38,8 @@ export const getConfigsByUserId = (userId: string) => {
     select: {
       id: true,
       namespace: true,
+      lastSyncedAt: true,
+      lastAccessedAt: true,
       createdAt: true,
       _count: {
         select: { emails: true },
@@ -51,6 +55,8 @@ export const getConfigById = (configId: string, userId: string) => {
     select: {
       id: true,
       namespace: true,
+      lastSyncedAt: true,
+      lastAccessedAt: true,
       createdAt: true,
       userId: true,
       _count: {
@@ -63,6 +69,69 @@ export const getConfigById = (configId: string, userId: string) => {
       return null;
     }
     return config;
+  });
+};
+
+export const getConfigByIdWithApiKey = (configId: string, userId: string) => {
+  return prisma.userConfig.findUnique({
+    where: { id: configId },
+    select: {
+      id: true,
+      namespace: true,
+      encryptedApiKey: true,
+      lastSyncedAt: true,
+      lastAccessedAt: true,
+      userId: true,
+      createdAt: true,
+    },
+  }).then((config) => {
+    if (config && config.userId !== userId) {
+      return null;
+    }
+    return config;
+  });
+};
+
+export const getConfigsForSync = () => {
+  return prisma.userConfig.findMany({
+    select: {
+      id: true,
+      userId: true,
+      namespace: true,
+      encryptedApiKey: true,
+      lastSyncedAt: true,
+      lastAccessedAt: true,
+      createdAt: true,
+    },
+    orderBy: [
+      { lastAccessedAt: 'desc' },
+      { lastSyncedAt: 'asc' },
+      { createdAt: 'asc' },
+    ],
+  });
+};
+
+export const touchConfigAccess = (configId: string, userId: string) => {
+  return prisma.userConfig.updateMany({
+    where: {
+      id: configId,
+      userId,
+    },
+    data: {
+      lastAccessedAt: new Date(),
+    },
+  });
+};
+
+export const markConfigSynced = (configId: string, userId: string, lastSyncedAt: Date) => {
+  return prisma.userConfig.updateMany({
+    where: {
+      id: configId,
+      userId,
+    },
+    data: {
+      lastSyncedAt,
+    },
   });
 };
 
