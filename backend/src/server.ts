@@ -1,12 +1,13 @@
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import { PORT } from './constants/index.js';
+import { PORT, FRONTEND_URL } from './constants/index.js';
 import healthRouter from './routes/health.js';
 import authRouter from './routes/auth.routes.js';
 import configRouter from './routes/config.routes.js';
 import { connectDB } from './db/database.js';
 import { errorHandler } from './middlewares/errorHandler.js';
+import { startTestmailSyncWorker } from './services/testmail-sync.service.js';
 
 const app = express();
 
@@ -14,7 +15,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || true,
+    origin: FRONTEND_URL || true,
     credentials: true,
   })
 );
@@ -28,6 +29,7 @@ app.use(errorHandler);
 
 const start = async () => {
   await connectDB();
+  await startTestmailSyncWorker();
   app.listen(PORT, () => {
     console.log(`🚀 Server listening on port ${PORT}`);
   });
