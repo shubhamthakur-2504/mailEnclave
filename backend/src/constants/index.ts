@@ -14,3 +14,12 @@ export const ENCRYPTION_KEY = getEnv('ENCRYPTION_KEY'); // expect 32-byte key in
 export const TESTMAIL_BASE_URL = process.env.TESTMAIL_BASE_URL || 'https://api.testmail.app';
 export const API_TIMEOUT_MS = Number(process.env.API_TIMEOUT_MS || 10000);
 export const IP_HASH_SECRET = getEnv('IP_HASH_SECRET', false);
+
+export const NODE_ENV = process.env.NODE_ENV || 'development';
+export const IS_PROD = NODE_ENV === 'production';
+export const FRONTEND_URL: string | boolean = process.env.FRONTEND_URL || true;
+
+export const TESTMAIL_LIVEQUERY_TIMEOUT_MS = Number(process.env.TESTMAIL_LIVEQUERY_TIMEOUT_MS || Math.max(API_TIMEOUT_MS, 75000));
+export const TESTMAIL_ACTIVE_NAMESPACE_WINDOW_MS = Number(process.env.TESTMAIL_ACTIVE_NAMESPACE_WINDOW_MS || 15 * 60 * 1000);
+export const TESTMAIL_POLL_INTERVAL_MS = Number(process.env.TESTMAIL_POLL_INTERVAL_MS || 15 * 60 * 1000);
+export const TESTMAIL_ACTIVE_RETRY_DELAY_MS = Number(process.env.TESTMAIL_ACTIVE_RETRY_DELAY_MS || 3000);

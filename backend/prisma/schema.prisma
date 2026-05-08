@@ -26,9 +26,13 @@ model UserConfig {
   encryptedApiKey String
   emails          Email[]
   privateTags     PrivateTag[] // Relation to locked tags
+  lastSyncedAt    DateTime?
+  lastAccessedAt  DateTime?
   createdAt       DateTime @default(now())
 
   @@unique([userId, namespace])
+  @@index([lastAccessedAt])
+  @@index([lastSyncedAt])
 }
 
 model Email {
@@ -45,6 +49,7 @@ model Email {
   receivedAt DateTime
 
   @@unique([userId, testmailId])
+  @@index([configId, receivedAt])
   @@index([tag])
 }
 
