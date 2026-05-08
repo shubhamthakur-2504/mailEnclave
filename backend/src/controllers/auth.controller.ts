@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { loginUser, setupVaultPin, signupUser, issueRefreshTokenForUser } from '../services/auth.service.js';
-import { revokeAllRefreshTokensForUser } from '../repositories/refresh.repository.js';
+import { revokeAllRefreshTokensForUser, findRefreshTokenById } from '../repositories/refresh.repository.js';
 import { findUserById } from '../repositories/user.repository.js';
 import { signupSchema, loginSchema, setupVaultSchema } from '../validators/auth.validator.js';
 import { formatZodErrors } from '../validators/formatErrors.js';
@@ -99,11 +99,22 @@ export const me = async (req: Request, res: Response, next: NextFunction) => {
 
 export const logout = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = req.userId;
-    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const cookieToken = (req as any).cookies?.refreshToken as string | undefined;
 
-    // Revoke all refresh tokens for the user and clear cookie
-    await revokeAllRefreshTokensForUser(userId);
+    if (cookieToken) {
+      const parts = cookieToken.split('.');
+      if (parts.length === 2) {
+        const [id] = parts;
+        const tokenRow = await findRefreshTokenById(id);
+
+        if (tokenRow) {
+          await revokeAllRefreshTokensForUser(tokenRow.userId);
+        }
+      }
+    } else if (req.userId) {
+      await revokeAllRefreshTokensForUser(req.userId);
+    }
+
     res.clearCookie('refreshToken', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' });
 
     return res.json({ message: 'Logged out' });

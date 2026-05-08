@@ -2,7 +2,7 @@ import prisma from '../db/prisma.js';
 
 const p: any = prisma as any;
 
-export const createRefreshToken = (data: {
+export const createRefreshToken = async (data: {
   id: string;
   userId: string;
   tokenHash: string;
