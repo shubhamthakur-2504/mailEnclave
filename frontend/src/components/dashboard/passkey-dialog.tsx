@@ -28,7 +28,7 @@ export default function PasskeyDialog({
 }: PasskeyDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="border-white/25 bg-slate-950/80 backdrop-blur-2xl">
+      <DialogContent className="border-border bg-popover backdrop-blur-2xl">
         <DialogHeader>
           <DialogTitle className="font-mono text-foreground">Passkey Challenge</DialogTitle>
           <DialogDescription>Enter passkey to decrypt sensitive messages in {activeNamespace}.</DialogDescription>
@@ -40,14 +40,14 @@ export default function PasskeyDialog({
             value={passkey}
             onChange={(event) => onPasskeyChange(event.target.value)}
             placeholder="Enter passkey"
-            className="border-white/20 bg-white/5"
+            className="border-border bg-background/50"
             autoFocus
           />
           {passkeyError ? <p className="text-xs text-destructive">{passkeyError}</p> : null}
           <p className="text-xs text-muted-foreground">Demo passkey: 4242</p>
 
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="border-white/20 bg-transparent">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="border-border bg-transparent text-foreground hover:bg-background/50">
               Cancel
             </Button>
             <Button

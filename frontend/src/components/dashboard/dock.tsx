@@ -13,7 +13,7 @@ type DockProps = {
 
 export default function Dock({ activeView, vaultUnlocked, onSelectView, onVaultClick }: DockProps) {
   return (
-    <div className="fixed bottom-6 left-1/2 z-40 w-[min(92vw,680px)] -translate-x-1/2 rounded-2xl border border-white/20 bg-black/35 px-2 py-2 backdrop-blur-2xl shadow-[0_12px_40px_rgba(5,10,24,0.4)]">
+    <div className="fixed bottom-6 left-1/2 z-40 w-[min(92vw,680px)] -translate-x-1/2 rounded-2xl border border-border bg-card/80 px-2 py-2 backdrop-blur-2xl shadow-[0_12px_40px_rgba(5,10,24,0.15)] dark:shadow-[0_12px_40px_rgba(5,10,24,0.4)]">
       <div className="grid grid-cols-4 gap-2">
         <DockButton
           active={activeView === "inbox"}
@@ -59,9 +59,9 @@ function DockButton({ active, label, icon, onClick }: DockButtonProps) {
       className={`flex flex-col items-center gap-1 rounded-xl border px-2 py-2 text-xs transition-all duration-300 hover:-translate-y-0.5 ${
         active
           ? label.toLowerCase().includes("vault")
-            ? "border-rose-400/60 bg-rose-400/12 text-rose-200 shadow-[0_0_16px_rgba(244,63,94,0.25)]"
-            : "border-indigo-400/60 bg-indigo-400/12 text-indigo-200 shadow-[0_0_16px_rgba(99,102,241,0.25)]"
-          : "border-white/10 bg-white/[0.03] text-muted-foreground hover:border-white/25 hover:text-foreground"
+            ? "border-destructive/60 bg-destructive/10 text-destructive shadow-[0_0_16px_rgba(244,63,94,0.25)]"
+            : "border-primary/60 bg-primary/10 text-primary shadow-[0_0_16px_rgba(99,102,241,0.25)]"
+          : "border-border/50 bg-background/50 text-muted-foreground hover:border-primary/40 hover:text-foreground"
       }`}
     >
       {icon}

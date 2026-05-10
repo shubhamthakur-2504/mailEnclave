@@ -30,7 +30,7 @@ export default function NamespaceDialog({
 }: NamespaceDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="border-white/25 bg-slate-950/80 backdrop-blur-2xl">
+      <DialogContent className="border-border bg-popover backdrop-blur-2xl">
         <DialogHeader>
           <DialogTitle className="font-mono text-foreground">Add namespace</DialogTitle>
           <DialogDescription>Connect a Testmail namespace and API key.</DialogDescription>
@@ -41,20 +41,20 @@ export default function NamespaceDialog({
             value={newNamespace}
             onChange={(event) => onNamespaceChange(event.target.value)}
             placeholder="e.g. acme-prod.testmail.app"
-            className="border-white/20 bg-white/5"
+            className="border-border bg-background/50"
             autoFocus
           />
           <Input
             value={newApiKey}
             onChange={(event) => onApiKeyChange(event.target.value)}
             placeholder="Testmail API key"
-            className="border-white/20 bg-white/5"
+            className="border-border bg-background/50"
             type="password"
           />
           {namespaceError ? <p className="text-xs text-destructive">{namespaceError}</p> : null}
 
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="border-white/20 bg-transparent rounded-full">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="border-border bg-transparent rounded-full text-foreground hover:bg-background/50">
               Cancel
             </Button>
             <Button
