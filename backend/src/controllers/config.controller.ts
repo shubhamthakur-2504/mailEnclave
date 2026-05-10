@@ -4,6 +4,7 @@ import { addTestmailConfigSchema } from '../validators/config.validator.js';
 import { formatZodErrors } from '../validators/formatErrors.js';
 import { listEmailsByConfigId } from '../repositories/email.repository.js';
 import { touchTestmailNamespace } from '../services/testmail-sync.service.js';
+import { subscribeToNamespace } from '../services/sse.service.js';
 
 export const addTestmailConfig = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -117,6 +118,23 @@ export const getDashboardStats = async (req: Request, res: Response, next: NextF
 
     const result = await getDashboardStatsService(userId);
     return res.status(result.status).json(result.body);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const subscribeSse = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.userId;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const configResult = await getConfigService(id, userId);
+    if (configResult.status !== 200) {
+      return res.status(configResult.status).json(configResult.body);
+    }
+
+    subscribeToNamespace(id, res);
   } catch (error) {
     next(error);
   }

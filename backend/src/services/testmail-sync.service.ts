@@ -3,6 +3,7 @@ import { decrypt } from '../lib/crypto.js';
 import { getConfigsForSync, markConfigSynced, touchConfigAccess } from '../repositories/config.repository.js';
 import { upsertEmail } from '../repositories/email.repository.js';
 import { fetchTestmailInbox, type TestmailJsonEmail } from './testmail.service.js';
+import { publishToNamespace } from './sse.service.js';
 import { TESTMAIL_ACTIVE_NAMESPACE_WINDOW_MS, TESTMAIL_POLL_INTERVAL_MS, TESTMAIL_ACTIVE_RETRY_DELAY_MS } from '../constants/index.js';
 
 type SyncConfig = {
@@ -97,7 +98,7 @@ const syncConfig = async (config: SyncConfig, livequery: boolean) => {
       latestTimestamp = receivedAt;
     }
 
-    await upsertEmail({
+    const stored = await upsertEmail({
       userId: config.userId,
       configId: config.id,
       testmailId: normalizeTestmailId(config, email),
@@ -107,6 +108,19 @@ const syncConfig = async (config: SyncConfig, livequery: boolean) => {
       receivedAt,
       isPrivate: false,
     });
+
+    try {
+      publishToNamespace(config.id, 'email:new', {
+        id: stored.id,
+        testmailId: stored.testmailId,
+        tag: stored.tag,
+        subject: stored.subject,
+        receivedAt: stored.receivedAt.getTime(),
+      });
+    } catch (err) {
+      // publishing failure should not stop sync
+      console.error('[testmail-sync] sse publish error', err);
+    }
   }
 
   await markConfigSynced(config.id, config.userId, latestTimestamp);
