@@ -91,3 +91,29 @@ export const getConfigEmailsRequest = async (
   const { data } = await protectedApi.get<TestmailInboxResponse>(`/config/${id}/emails`, { params })
   return data
 }
+
+export const subscribeConfigEvents = (
+  id: string,
+  token: string | null | undefined,
+  onEmailNew?: (payload: { id: string; testmailId: string; tag: string; subject: string; receivedAt: number }) => void
+) => {
+  if (!token) return null
+
+  const url = new URL(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4000'}/config/${id}/subscribe`)
+  url.searchParams.set('token', token)
+
+  const es = new EventSource(url.toString())
+
+  if (onEmailNew) {
+    es.addEventListener('email:new', (e: MessageEvent) => {
+      try {
+        const payload = JSON.parse(String(e.data))
+        onEmailNew(payload)
+      } catch (err) {
+        // ignore
+      }
+    })
+  }
+
+  return es
+}

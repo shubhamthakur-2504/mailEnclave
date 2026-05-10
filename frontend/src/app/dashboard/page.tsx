@@ -2,6 +2,8 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { addConfigRequest, getConfigEmailsRequest, listConfigsRequest } from '@/lib/api/config-api'
+import { useAuthStore } from '@/stores/auth-store'
+import { subscribeConfigEvents } from '@/lib/api/config-api'
 import Dock from '@/components/dashboard/dock'
 import MailList from '@/components/dashboard/mail-list'
 import NamespacesView from '@/components/dashboard/namespaces-view'
@@ -31,6 +33,7 @@ export default function DashboardPage() {
   const [isSavingNamespace, setIsSavingNamespace] = useState(false)
   const [emails, setEmails] = useState<EmailItem[]>([])
   const [isEmailsLoading, setIsEmailsLoading] = useState(false)
+  const accessToken = useAuthStore((state) => state.accessToken)
   const isVaultView = activeView === 'vault'
   const namespaces = useMemo(() => configs.map((config) => config.namespace), [configs])
   const activeConfig = useMemo(
@@ -80,14 +83,15 @@ export default function DashboardPage() {
   }, [])
 
   useEffect(() => {
+    if (!activeConfig) {
+      setEmails([])
+      return
+    }
+
     let isMounted = true
+    let eventSource: EventSource | null = null
 
     const loadEmails = async () => {
-      if (!activeConfig) {
-        setEmails([])
-        return
-      }
-
       try {
         setIsEmailsLoading(true)
         const inbox = await getConfigEmailsRequest(activeConfig.id, { limit: 100 })
@@ -116,11 +120,39 @@ export default function DashboardPage() {
       }
     }
 
-    loadEmails()
+    const connectStream = () => {
+      if (!accessToken) return
+      const es = subscribeConfigEvents(activeConfig.id, accessToken, (payload) => {
+        setEmails((prev) => {
+          // avoid duplicates by db id or testmail id
+          if (prev.find((e) => e.id === payload.id || (e.id && e.id === payload.testmailId))) {
+            return prev
+          }
+
+          const newItem: EmailItem = {
+            id: payload.id ?? `${activeConfig.namespace}-${payload.tag ?? 'mail'}-${payload.receivedAt}`,
+            tag: payload.tag ?? 'untagged',
+            subject: payload.subject ?? '(no subject)',
+            namespace: activeConfig.namespace,
+            receivedAt: new Date(payload.receivedAt).toLocaleString(),
+            sensitive: false,
+          }
+
+          return [newItem, ...prev]
+        })
+      })
+
+      eventSource = es
+    }
+
+    void loadEmails()
+    connectStream()
+
     return () => {
       isMounted = false
+      eventSource?.close()
     }
-  }, [activeConfig])
+  }, [activeConfig, accessToken])
 
   useEffect(() => {
     if (activeView === 'namespaces') {
