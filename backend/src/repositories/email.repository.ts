@@ -51,7 +51,21 @@ export const listEmailsByConfigId = (configId: string) => {
       subject: true,
       htmlBody: true,
       isPrivate: true,
+      isRead: true,
       receivedAt: true,
     },
+  });
+};
+
+export const getEmailById = (id: string) => {
+  return prisma.email.findUnique({
+    where: { id },
+  });
+};
+
+export const markEmailRead = (id: string, userId: string) => {
+  return prisma.email.updateMany({
+    where: { id, userId },
+    data: { isRead: true },
   });
 };

@@ -5,6 +5,7 @@ import { PORT, FRONTEND_URL } from './constants/index.js';
 import healthRouter from './routes/health.js';
 import authRouter from './routes/auth.routes.js';
 import configRouter from './routes/config.routes.js';
+import emailRouter from './routes/email.routes.js';
 import { connectDB } from './db/database.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 import { startTestmailSyncWorker } from './services/testmail-sync.service.js';
@@ -24,6 +25,7 @@ app.get('/', (_req, res) => res.json({ service: 'testmail-wrapper', status: 'sta
 app.use('/health', healthRouter);
 app.use('/auth', authRouter);
 app.use('/config', configRouter);
+app.use('/emails', emailRouter);
 
 app.use(errorHandler);
 
