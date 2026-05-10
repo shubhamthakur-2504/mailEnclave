@@ -13,6 +13,7 @@ type MailListProps = {
   vaultUnlocked: boolean
   isLoading?: boolean
   onRequirePasskey: () => void
+  onOpen?: (email: EmailItem) => void
 }
 
 export default function MailList({
@@ -24,12 +25,13 @@ export default function MailList({
   vaultUnlocked,
   isLoading,
   onRequirePasskey,
+  onOpen,
 }: MailListProps) {
   const showLockedVaultMessage = activeView === "vault" && !vaultUnlocked
 
   return (
     <article
-      className="rounded-2xl border border-white/15 bg-black/20 p-4 backdrop-blur-md transition-all duration-300 hover:border-white/30"
+      className="rounded-2xl border border-border bg-card p-4 backdrop-blur-md transition-all duration-300 hover:border-primary/30"
       onClick={() => {
         if (isVaultView && !vaultUnlocked) {
           onRequirePasskey()
@@ -47,13 +49,13 @@ export default function MailList({
       </div>
 
       {showLockedVaultMessage ? (
-        <div className="flex min-h-52 flex-col items-center justify-center rounded-xl border border-dashed border-rose-300/40 bg-rose-500/5 p-6 text-center">
-          <KeyRound className="mb-3 size-7 text-rose-300" />
+        <div className="flex min-h-52 flex-col items-center justify-center rounded-xl border border-dashed border-destructive/40 bg-destructive/5 p-6 text-center">
+          <KeyRound className="mb-3 size-7 text-destructive" />
           <p className="mb-1 text-sm font-semibold text-foreground">Vault is locked</p>
           <p className="text-xs text-muted-foreground">Use the Vault control in the dock and pass the challenge.</p>
         </div>
       ) : isLoading ? (
-        <div className="rounded-xl border border-dashed border-white/20 p-4 text-center text-sm text-muted-foreground">
+        <div className="rounded-xl border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
           Loading emails...
         </div>
       ) : (
@@ -61,18 +63,21 @@ export default function MailList({
           {emails.map((email) => (
             <div
               key={email.id}
-              className={`rounded-xl border border-white/10 bg-white/[0.03] p-3 transition-[filter,opacity,transform,background-color,border-color] duration-200 ease-out hover:scale-[1.01] ${
+              onClick={() => onOpen && onOpen(email)}
+              role="button"
+              tabIndex={0}
+              className={`rounded-xl border border-border/60 bg-background/40 p-3 transition-[filter,opacity,transform,background-color,border-color] duration-200 ease-out hover:scale-[1.01] ${
                 email.sensitive && !vaultUnlocked
                   ? "blur-sm opacity-60 saturate-50 scale-[0.995]"
                   : "blur-0 opacity-100 saturate-100 scale-100"
               } ${
                 isVaultView
-                  ? "hover:border-rose-300/40 hover:bg-rose-400/5"
-                  : "hover:border-indigo-300/40 hover:bg-indigo-400/5"
+                  ? "hover:border-destructive/40 hover:bg-destructive/5"
+                  : "hover:border-primary/40 hover:bg-primary/5"
               }`}
             >
               <div className="mb-1 flex items-center justify-between">
-                <span className={`font-mono text-xs ${isVaultView ? "text-rose-300" : "text-indigo-300"}`}>
+                <span className={`font-mono text-xs ${isVaultView ? "text-destructive" : "text-primary"}`}>
                   {email.tag}
                 </span>
                 <span className="text-xs text-muted-foreground">{email.receivedAt}</span>
@@ -82,7 +87,7 @@ export default function MailList({
           ))}
 
           {!emails.length && (
-            <div className="rounded-xl border border-dashed border-white/20 p-4 text-center text-sm text-muted-foreground">
+            <div className="rounded-xl border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
               No emails matched this view.
             </div>
           )}

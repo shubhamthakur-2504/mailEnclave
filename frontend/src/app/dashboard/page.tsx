@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/auth-store'
 import { subscribeConfigEvents } from '@/lib/api/config-api'
 import Dock from '@/components/dashboard/dock'
 import MailList from '@/components/dashboard/mail-list'
+import MailDetail from '@/components/dashboard/mail-detail'
 import NamespacesView from '@/components/dashboard/namespaces-view'
 import NamespaceDialog from '@/components/dashboard/namespace-dialog'
 import PasskeyDialog from '@/components/dashboard/passkey-dialog'
@@ -34,6 +35,8 @@ export default function DashboardPage() {
   const [emails, setEmails] = useState<EmailItem[]>([])
   const [isEmailsLoading, setIsEmailsLoading] = useState(false)
   const accessToken = useAuthStore((state) => state.accessToken)
+  const [openEmailId, setOpenEmailId] = useState<string | null>(null)
+  const [openEmail, setOpenEmail] = useState<any | null>(null)
   const isVaultView = activeView === 'vault'
   const namespaces = useMemo(() => configs.map((config) => config.namespace), [configs])
   const activeConfig = useMemo(
@@ -314,7 +317,7 @@ export default function DashboardPage() {
             onOpenAddDialog={() => setNamespaceDialogOpen(true)}
           />
         ) : (
-          <div className="grid gap-4 md:grid-cols-[220px_1fr]">
+          <div className={`grid gap-4 md:grid-cols-[220px_1fr]`}>
             <TagsPanel
               tags={tags}
               activeTag={activeTag}
@@ -323,16 +326,36 @@ export default function DashboardPage() {
               onSelectTag={setActiveTag}
               onRequirePasskey={promptPasskey}
             />
-            <MailList
-              emails={filteredEmails}
-              activeView={activeView}
-              activeNamespace={activeNamespace}
-              activeTag={activeTag}
-              isVaultView={isVaultView}
-              vaultUnlocked={vaultUnlocked}
-              isLoading={isEmailsLoading}
-              onRequirePasskey={promptPasskey}
-            />
+            {openEmail ? (
+              <div className="order-2">
+                <MailDetail email={openEmail} onClose={() => { setOpenEmailId(null); setOpenEmail(null); }} />
+              </div>
+            ) : (
+              <MailList
+                emails={filteredEmails}
+                activeView={activeView}
+                activeNamespace={activeNamespace}
+                activeTag={activeTag}
+                isVaultView={isVaultView}
+                vaultUnlocked={vaultUnlocked}
+                isLoading={isEmailsLoading}
+                onRequirePasskey={promptPasskey}
+                onOpen={(email) => {
+                  setOpenEmailId(email.id)
+                  void (async () => {
+                    try {
+                      const full = await (await import('@/lib/api/emails-api')).getEmailRequest(email.id)
+                      setOpenEmail(full)
+                      // mark read
+                      await (await import('@/lib/api/emails-api')).markEmailReadRequest(email.id)
+                    } catch (err) {
+                      // ignore
+                    }
+                  })()
+                }}
+              />
+            )}
+            
           </div>
         )}
       </section>
