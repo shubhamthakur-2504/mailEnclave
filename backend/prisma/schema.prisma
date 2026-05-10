@@ -45,6 +45,7 @@ model Email {
   tag        String
   subject    String
   htmlBody   String?
+  isRead     Boolean  @default(false)
   isPrivate  Boolean  @default(false)
   receivedAt DateTime
 
