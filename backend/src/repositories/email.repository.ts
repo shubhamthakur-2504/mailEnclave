@@ -6,7 +6,9 @@ export type StoredEmailInput = {
   testmailId: string;
   tag: string;
   subject: string;
+  from?: string | null;
   htmlBody?: string | null;
+  textBody?: string | null;
   isPrivate?: boolean;
   receivedAt: Date;
 };
@@ -25,7 +27,9 @@ export const upsertEmail = async (input: StoredEmailInput) => {
       testmailId: input.testmailId,
       tag: input.tag,
       subject: input.subject,
+      from: input.from ?? null,
       htmlBody: input.htmlBody ?? null,
+      textBody: input.textBody ?? null,
       isPrivate: input.isPrivate ?? false,
       receivedAt: input.receivedAt,
     },
@@ -33,7 +37,9 @@ export const upsertEmail = async (input: StoredEmailInput) => {
       configId: input.configId,
       tag: input.tag,
       subject: input.subject,
+      from: input.from ?? null,
       htmlBody: input.htmlBody ?? null,
+      textBody: input.textBody ?? null,
       isPrivate: input.isPrivate ?? false,
       receivedAt: input.receivedAt,
     },
@@ -49,7 +55,9 @@ export const listEmailsByConfigId = (configId: string) => {
       testmailId: true,
       tag: true,
       subject: true,
+      from: true,
       htmlBody: true,
+      textBody: true,
       isPrivate: true,
       isRead: true,
       receivedAt: true,

@@ -10,7 +10,21 @@ export const getEmail = async (req: Request, res: Response, next: NextFunction) 
     const email = await getEmailById(id);
     if (!email || email.userId !== userId) return res.status(404).json({ error: 'Email not found' });
 
-    return res.json({ email });
+    return res.json({
+      email: {
+        id: email.id,
+        testmailId: email.testmailId,
+        tag: email.tag,
+        subject: email.subject,
+        from: email.from,
+        htmlBody: email.htmlBody,
+        text: email.textBody,
+        isRead: email.isRead,
+        isPrivate: email.isPrivate,
+        receivedAt: email.receivedAt,
+        configId: email.configId,
+      },
+    });
   } catch (err) {
     next(err);
   }
