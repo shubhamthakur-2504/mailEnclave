@@ -16,6 +16,7 @@ type TopBarProps = {
   isVaultView: boolean
   vaultUnlocked: boolean
   disableMenu: boolean
+  hidden?: boolean
 }
 
 export default function TopBar({
@@ -31,10 +32,20 @@ export default function TopBar({
   isVaultView,
   vaultUnlocked,
   disableMenu,
+  hidden = false,
 }: TopBarProps) {
   return (
-    <div className="mb-5 grid gap-3 md:grid-cols-[1fr_1.2fr_1fr]">
-      <div className="relative">
+    <div
+      className={`grid transition-all duration-500 ease-in-out ${
+        hidden
+          ? "mb-0 -translate-y-4 grid-rows-[0fr] opacity-0 pointer-events-none"
+          : "mb-5 translate-y-0 grid-rows-[1fr] opacity-100"
+      }`}
+      style={hidden ? { overflow: "hidden" } : { overflow: "visible" }}
+    >
+      <div className="min-h-0">
+        <div className="grid gap-3 md:grid-cols-[1fr_1.2fr_1fr] pb-1">
+          <div className="relative">
         <button
           type="button"
           onClick={() => {
@@ -121,6 +132,8 @@ export default function TopBar({
             {vaultUnlocked ? "Decrypted" : "Locked"}
           </span>
         </div>
+      </div>
+      </div>
       </div>
     </div>
   )

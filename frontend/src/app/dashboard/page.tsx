@@ -260,7 +260,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden px-4 pb-32 pt-6 md:px-8">
+    <main className={`relative min-h-screen overflow-hidden px-4 pt-6 md:px-8 transition-all duration-500 ${openEmail ? 'pb-6' : 'pb-32'}`}>
       <div className="pointer-events-none fixed inset-0 -z-20 overflow-hidden">
         <div
           className={`absolute -left-1/4 -top-1/3 h-[34rem] w-[34rem] rounded-full blur-3xl transition-all duration-500 ${
@@ -304,6 +304,7 @@ export default function DashboardPage() {
           isVaultView={isVaultView}
           vaultUnlocked={vaultUnlocked}
           disableMenu={activeView === 'namespaces'}
+          hidden={!!openEmail}
         />
 
         {activeView === 'namespaces' ? (
@@ -370,6 +371,7 @@ export default function DashboardPage() {
           }
         }}
         onVaultClick={handleVaultClick}
+        hidden={!!openEmail}
       />
 
       <PasskeyDialog

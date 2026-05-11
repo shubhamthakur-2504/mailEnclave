@@ -9,11 +9,16 @@ type DockProps = {
   vaultUnlocked: boolean
   onSelectView: (view: DockView) => void
   onVaultClick: () => void
+  hidden?: boolean
 }
 
-export default function Dock({ activeView, vaultUnlocked, onSelectView, onVaultClick }: DockProps) {
+export default function Dock({ activeView, vaultUnlocked, onSelectView, onVaultClick, hidden = false }: DockProps) {
   return (
-    <div className="fixed bottom-6 left-1/2 z-40 w-[min(92vw,680px)] -translate-x-1/2 rounded-2xl border border-border bg-card/80 px-2 py-2 backdrop-blur-2xl shadow-[0_12px_40px_rgba(5,10,24,0.15)] dark:shadow-[0_12px_40px_rgba(5,10,24,0.4)]">
+    <div
+      className={`fixed bottom-6 left-1/2 z-40 w-[min(92vw,680px)] -translate-x-1/2 rounded-2xl border border-border bg-card/80 px-2 py-2 shadow-[0_12px_40px_rgba(5,10,24,0.15)] backdrop-blur-2xl transition-all duration-500 ease-in-out dark:shadow-[0_12px_40px_rgba(5,10,24,0.4)] ${
+        hidden ? "translate-y-[150%] opacity-0 pointer-events-none" : "translate-y-0 opacity-100"
+      }`}
+    >
       <div className="grid grid-cols-4 gap-2">
         <DockButton
           active={activeView === "inbox"}

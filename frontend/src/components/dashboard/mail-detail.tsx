@@ -47,8 +47,8 @@ export default function MailDetail({ email, onClose }: Props) {
       <div className={`mt-6 w-full overflow-hidden rounded-xl bg-white shadow-sm border border-black/5`}>
         <iframe
           sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin"
-          className="w-full border-0"
-          style={{ minHeight: '600px', height: 'calc(100vh - 250px)' }}
+          className="w-full border-0 transition-all duration-500"
+          style={{ minHeight: '600px', height: 'calc(100vh - 140px)' }}
           srcDoc={email.htmlBody ?? `<pre style="font-family: system-ui, sans-serif; padding: 1rem; margin: 0; white-space: pre-wrap;">${email.text ?? '<i>(no body)</i>'}</pre>`}
           title="Email content"
         />
