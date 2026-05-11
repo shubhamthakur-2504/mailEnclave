@@ -29,6 +29,7 @@ export type TestmailEmail = {
   text?: string
   html?: string
   from?: string
+  isPrivate?: boolean
 }
 
 export type TestmailInboxResponse = {
@@ -95,7 +96,7 @@ export const getConfigEmailsRequest = async (
 export const subscribeConfigEvents = (
   id: string,
   token: string | null | undefined,
-  onEmailNew?: (payload: { id: string; testmailId: string; tag: string; subject: string; receivedAt: number }) => void
+  onEmailNew?: (payload: { id: string; testmailId: string; tag: string; subject: string; receivedAt: number; isPrivate?: boolean }) => void
 ) => {
   if (!token) return null
 
@@ -116,4 +117,30 @@ export const subscribeConfigEvents = (
   }
 
   return es
+}
+
+/* ── Private tag management ──────────────────────────────────── */
+
+export type PrivateTag = {
+  tag: string
+}
+
+export const getPrivateTagsRequest = async (configId: string) => {
+  const { data } = await protectedApi.get<{ privateTags: PrivateTag[] }>(`/config/${configId}/private-tags`)
+  return data.privateTags
+}
+
+export const addPrivateTagRequest = async (configId: string, tag: string) => {
+  const { data } = await protectedApi.post<{ message: string; privateTag: PrivateTag; backfilled: number }>(
+    `/config/${configId}/private-tags`,
+    { tag }
+  )
+  return data
+}
+
+export const removePrivateTagRequest = async (configId: string, tag: string) => {
+  const { data } = await protectedApi.delete<{ message: string; deleted: number; backfilled: number }>(
+    `/config/${configId}/private-tags/${encodeURIComponent(tag)}`
+  )
+  return data
 }
