@@ -44,7 +44,9 @@ model Email {
   testmailId String
   tag        String
   subject    String
+  from       String?
   htmlBody   String?
+  textBody   String?
   isRead     Boolean  @default(false)
   isPrivate  Boolean  @default(false)
   receivedAt DateTime
@@ -52,6 +54,7 @@ model Email {
   @@unique([userId, testmailId])
   @@index([configId, receivedAt])
   @@index([tag])
+  @@index([isPrivate])
 }
 
 model PrivateTag {
