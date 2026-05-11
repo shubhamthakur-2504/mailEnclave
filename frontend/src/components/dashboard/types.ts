@@ -11,5 +11,8 @@ export type EmailItem = {
   subject: string
   namespace: string
   receivedAt: string
+  from?: string | null
+  text?: string | null
+  isPrivate?: boolean
   sensitive: boolean
 }

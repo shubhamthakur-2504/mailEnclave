@@ -54,7 +54,7 @@ export default function MailDetail({ email, onClose }: Props) {
             <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
               <span className="inline-flex items-center gap-1">
                 <User className="size-3" />
-                {email.from ?? 'unknown'}
+                {email.from ?? 'Unknown sender'}
               </span>
               <span className="inline-flex items-center gap-1">
                 <Clock className="size-3" />
