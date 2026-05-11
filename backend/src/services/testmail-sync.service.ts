@@ -14,6 +14,7 @@ type SyncConfig = {
   lastSyncedAt: Date | null;
   lastAccessedAt: Date | null;
   createdAt: Date;
+  privateTags?: Array<{ tag: string }>;
 };
 
 const ACTIVE_NAMESPACE_WINDOW_MS = TESTMAIL_ACTIVE_NAMESPACE_WINDOW_MS;
@@ -73,6 +74,14 @@ const pickActiveConfig = (configs: SyncConfig[]) => {
   }) ?? null;
 };
 
+const isPrivateEmail = (config: SyncConfig, email: TestmailJsonEmail) => {
+  if (!email.tag) {
+    return false;
+  }
+
+  return (config.privateTags ?? []).some((item) => item.tag === email.tag);
+};
+
 const syncConfig = async (config: SyncConfig, livequery: boolean) => {
   const apiKey = decrypt(config.encryptedApiKey);
   const { status, data } = await fetchTestmailInbox({
@@ -104,9 +113,11 @@ const syncConfig = async (config: SyncConfig, livequery: boolean) => {
       testmailId: normalizeTestmailId(config, email),
       tag: email.tag ?? 'untagged',
       subject: email.subject ?? '(no subject)',
+      from: typeof email.from === 'string' ? email.from : null,
       htmlBody: typeof email.html === 'string' ? email.html : null,
+      textBody: typeof email.text === 'string' ? email.text : null,
       receivedAt,
-      isPrivate: false,
+      isPrivate: isPrivateEmail(config, email),
     });
 
     try {
@@ -116,6 +127,7 @@ const syncConfig = async (config: SyncConfig, livequery: boolean) => {
         tag: stored.tag,
         subject: stored.subject,
         receivedAt: stored.receivedAt.getTime(),
+        isPrivate: stored.isPrivate,
       });
     } catch (err) {
       // publishing failure should not stop sync
