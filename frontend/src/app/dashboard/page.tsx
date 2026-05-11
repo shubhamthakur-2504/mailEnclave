@@ -260,26 +260,33 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className={`relative min-h-screen overflow-hidden px-4 pt-6 md:px-8 transition-all duration-500 ${openEmail ? 'pb-6' : 'pb-32'}`}>
+    <main className={`noise-overlay relative min-h-screen overflow-hidden px-4 pt-6 md:px-8 transition-all duration-500 ${openEmail ? 'pb-6' : 'pb-32'}`}>
       <div className="pointer-events-none fixed inset-0 -z-20 overflow-hidden">
         <div
-          className={`absolute -left-1/4 -top-1/3 h-[34rem] w-[34rem] rounded-full blur-3xl transition-all duration-500 ${
+          className={`absolute -left-1/4 -top-1/3 h-[34rem] w-[34rem] rounded-full blur-3xl transition-all duration-700 ${
             isVaultView ? 'bg-rose-500/20' : 'bg-blue-500/20'
           }`}
         />
         <div
-          className={`absolute right-[-6rem] top-10 h-[28rem] w-[28rem] rounded-full blur-3xl transition-all duration-500 ${
+          className={`absolute right-[-6rem] top-10 h-[28rem] w-[28rem] rounded-full blur-3xl transition-all duration-700 ${
             isVaultView ? 'bg-rose-400/20' : 'bg-indigo-500/20'
           }`}
         />
         <div
-          className={`absolute bottom-[-10rem] left-1/3 h-[30rem] w-[30rem] rounded-full blur-3xl transition-all duration-500 ${
+          className={`absolute bottom-[-10rem] left-1/3 h-[30rem] w-[30rem] rounded-full blur-3xl transition-all duration-700 ${
             isVaultView ? 'bg-rose-300/15' : 'bg-blue-400/15'
           }`}
         />
+        {/* Floating particles */}
+        <div className="particle" style={{ left: '10%', top: '15%' }} />
+        <div className="particle" />
+        <div className="particle" />
+        <div className="particle" />
+        <div className="particle" />
+        <div className="particle" />
       </div>
 
-      <section className="w-full p-4 md:p-6">
+      <section className="w-full p-4 md:p-6 fade-in-up">
         <TopBar
           activeNamespace={activeNamespace}
           namespaces={namespaces}
@@ -308,6 +315,7 @@ export default function DashboardPage() {
         />
 
         {activeView === 'namespaces' ? (
+          <div key="namespaces-view" className="view-transition">
           <NamespacesView
             namespaces={namespaces}
             activeNamespace={activeNamespace}
@@ -317,8 +325,9 @@ export default function DashboardPage() {
             }}
             onOpenAddDialog={() => setNamespaceDialogOpen(true)}
           />
+          </div>
         ) : (
-          <div className={`grid gap-4 md:grid-cols-[220px_1fr]`}>
+          <div key={`inbox-${activeView}`} className={`view-transition grid gap-4 md:grid-cols-[220px_1fr]`}>
             <TagsPanel
               tags={tags}
               activeTag={activeTag}

@@ -50,46 +50,52 @@
 
 :root {
   /* Frosted light theme */
-  --background: #f0f2fb;
-  --foreground: #1a1d3a;
-  --card: rgba(255, 255, 255, 0.85);
-  --card-foreground: #1a1d3a;
-  --popover: rgba(255, 255, 255, 0.95);
-  --popover-foreground: #1a1d3a;
-  --primary: #5b6af5;
+  --background: #eef0f9;
+  --foreground: #12142e;
+  --card: rgba(255, 255, 255, 0.92);
+  --card-foreground: #12142e;
+  --popover: rgba(255, 255, 255, 0.97);
+  --popover-foreground: #12142e;
+  --primary: #4a58e0;
   --primary-foreground: #ffffff;
-  --secondary: #e8ecf8;
-  --secondary-foreground: #5a5f8a;
-  --muted: #e8ecf8;
-  --muted-foreground: #5a5f8a;
-  --accent: #7c87f7;
+  --secondary: #dfe4f4;
+  --secondary-foreground: #3d4266;
+  --muted: #dfe4f4;
+  --muted-foreground: #3d4266;
+  --accent: #6570e8;
   --accent-foreground: #ffffff;
-  --destructive: #ef4444;
-  --border: rgba(26, 29, 58, 0.12);
-  --input: rgba(26, 29, 58, 0.15);
-  --ring: #7c87f7;
-  --chart-1: #60a5fa;
-  --chart-2: #34d399;
-  --chart-3: #f97316;
-  --chart-4: #f472b6;
-  --chart-5: #a78bfa;
+  --destructive: #dc2626;
+  --border: rgba(20, 22, 48, 0.18);
+  --input: rgba(20, 22, 48, 0.20);
+  --ring: #6570e8;
+  --chart-1: #3b82f6;
+  --chart-2: #10b981;
+  --chart-3: #ea580c;
+  --chart-4: #ec4899;
+  --chart-5: #8b5cf6;
   --radius: 0.625rem;
-  --sidebar: rgba(255, 255, 255, 0.85);
-  --sidebar-foreground: #1a1d3a;
-  --sidebar-primary: #5b6af5;
+  --sidebar: rgba(255, 255, 255, 0.90);
+  --sidebar-foreground: #12142e;
+  --sidebar-primary: #4a58e0;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e8ecf8;
-  --sidebar-accent-foreground: #5a5f8a;
-  --sidebar-border: rgba(26, 29, 58, 0.12);
-  --sidebar-ring: #7c87f7;
+  --sidebar-accent: #dfe4f4;
+  --sidebar-accent-foreground: #3d4266;
+  --sidebar-border: rgba(20, 22, 48, 0.18);
+  --sidebar-ring: #6570e8;
 
-  --text-secondary: #5a5f8a;
-  --text-ghost: #9499c0;
-  --glass-bg: rgba(255, 255, 255, 0.55);
-  --glass-border: rgba(255, 255, 255, 0.75);
-  --orb-a: rgba(167, 139, 250, 0.2);
-  --orb-b: rgba(99, 179, 237, 0.18);
-  --orb-c: rgba(196, 181, 253, 0.24);
+  --text-secondary: #3d4266;
+  --text-ghost: #6b7094;
+  --glass-bg: rgba(255, 255, 255, 0.65);
+  --glass-border: rgba(20, 22, 48, 0.12);
+  --orb-a: rgba(167, 139, 250, 0.22);
+  --orb-b: rgba(99, 179, 237, 0.20);
+  --orb-c: rgba(196, 181, 253, 0.26);
+
+  --shimmer-from: rgba(255, 255, 255, 0);
+  --shimmer-via: rgba(255, 255, 255, 0.5);
+  --shimmer-to: rgba(255, 255, 255, 0);
+  --glow-primary: rgba(74, 88, 224, 0.35);
+  --glow-destructive: rgba(220, 38, 38, 0.35);
 }
 
 .dark {
@@ -133,6 +139,12 @@
   --orb-a: rgba(124, 135, 247, 0.16);
   --orb-b: rgba(56, 189, 248, 0.12);
   --orb-c: rgba(167, 139, 250, 0.15);
+
+  --shimmer-from: rgba(255, 255, 255, 0);
+  --shimmer-via: rgba(255, 255, 255, 0.06);
+  --shimmer-to: rgba(255, 255, 255, 0);
+  --glow-primary: rgba(124, 135, 247, 0.35);
+  --glow-destructive: rgba(239, 68, 68, 0.35);
 }
 
 @layer base {
@@ -144,8 +156,11 @@
   }
   html {
     @apply font-sans;
+    scroll-behavior: smooth;
   }
 }
+
+/* ───────────────────────────── Frost scene background orbs ───────────────────────────── */
 
 .frost-scene {
   position: fixed;
@@ -159,6 +174,7 @@
   position: absolute;
   border-radius: 999px;
   filter: blur(80px);
+  will-change: transform;
   animation: frost-drift 18s ease-in-out infinite alternate;
 }
 
@@ -197,6 +213,8 @@
   }
 }
 
+/* ───────────────────────────── Glassmorphism panels ───────────────────────────── */
+
 .glass-panel {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -212,6 +230,8 @@
   box-shadow: 0 10px 30px rgba(20, 20, 50, 0.12);
 }
 
+/* ───────────────────────────── Gradient text ───────────────────────────── */
+
 .hero-gradient-text {
   background: linear-gradient(125deg, #5b6af5 0%, #a78bfa 55%, #60a5fa 100%);
   -webkit-background-clip: text;
@@ -223,6 +243,8 @@
   color: var(--text-ghost);
 }
 
+/* ───────────────────────────── Vault blur reveal ───────────────────────────── */
+
 .vault-secret {
   filter: blur(7px);
   transition: filter 200ms ease;
@@ -232,9 +254,476 @@
   filter: blur(0);
 }
 
-/* Sonner toast contrast tweak */
+/* ───────────────────────────── Sonner toast ───────────────────────────── */
+
 .cn-toast {
   background: var(--popover) !important;
   color: var(--popover-foreground) !important;
   border: 1px solid var(--border) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ✨  NEW ANIMATION & UI UPGRADE FEATURES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ───────────────────────────── Staggered fade-in ───────────────────────────── */
+
+.fade-in-up {
+  animation: fadeInUp 0.5s ease-out both;
+}
+
+.fade-in-up-delay-1 { animation-delay: 0.06s; }
+.fade-in-up-delay-2 { animation-delay: 0.12s; }
+.fade-in-up-delay-3 { animation-delay: 0.18s; }
+.fade-in-up-delay-4 { animation-delay: 0.24s; }
+.fade-in-up-delay-5 { animation-delay: 0.30s; }
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ───────────────────────────── Slide in from sides ───────────────────────────── */
+
+.slide-in-left {
+  animation: slideInLeft 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.slide-in-right {
+  animation: slideInRight 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ───────────────────────────── Scale pop-in ───────────────────────────── */
+
+.scale-in {
+  animation: scaleIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ───────────────────────────── Shimmer skeleton ───────────────────────────── */
+
+.shimmer {
+  position: relative;
+  overflow: hidden;
+  background: var(--muted);
+  border-radius: 0.75rem;
+}
+
+.shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    var(--shimmer-from) 0%,
+    var(--shimmer-via) 50%,
+    var(--shimmer-to) 100%
+  );
+  animation: shimmerSlide 1.8s ease-in-out infinite;
+  transform: translateX(-100%);
+}
+
+@keyframes shimmerSlide {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* ───────────────────────────── Pulse glow (active buttons/states) ───────────────────────────── */
+
+.pulse-glow-primary {
+  animation: pulseGlowPrimary 2.4s ease-in-out infinite;
+}
+
+.pulse-glow-destructive {
+  animation: pulseGlowDestructive 2.4s ease-in-out infinite;
+}
+
+@keyframes pulseGlowPrimary {
+  0%, 100% {
+    box-shadow: 0 0 8px var(--glow-primary), 0 0 0 0 var(--glow-primary);
+  }
+  50% {
+    box-shadow: 0 0 18px var(--glow-primary), 0 0 40px rgba(124, 135, 247, 0.08);
+  }
+}
+
+@keyframes pulseGlowDestructive {
+  0%, 100% {
+    box-shadow: 0 0 8px var(--glow-destructive), 0 0 0 0 var(--glow-destructive);
+  }
+  50% {
+    box-shadow: 0 0 18px var(--glow-destructive), 0 0 40px rgba(239, 68, 68, 0.08);
+  }
+}
+
+/* ───────────────────────────── Animated gradient border ───────────────────────────── */
+
+.gradient-border {
+  position: relative;
+  isolation: isolate;
+}
+
+.gradient-border::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    var(--primary) 0%,
+    var(--accent) 50%,
+    var(--primary) 100%
+  );
+  background-size: 200% 200%;
+  animation: gradientRotate 4s ease infinite;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.gradient-border:hover::before,
+.gradient-border:focus-within::before {
+  opacity: 1;
+}
+
+@keyframes gradientRotate {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ───────────────────────────── Floating particles (dashboard background) ───────────────────────────── */
+
+.particle {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--primary);
+  opacity: 0.15;
+  animation: floatParticle 12s ease-in-out infinite;
+  will-change: transform;
+}
+
+.particle:nth-child(2) { animation-delay: -3s; left: 20%; top: 40%; width: 2px; height: 2px; }
+.particle:nth-child(3) { animation-delay: -6s; left: 65%; top: 20%; }
+.particle:nth-child(4) { animation-delay: -9s; left: 80%; top: 60%; width: 4px; height: 4px; opacity: 0.1; }
+.particle:nth-child(5) { animation-delay: -2s; left: 40%; top: 75%; }
+.particle:nth-child(6) { animation-delay: -7s; left: 10%; top: 85%; width: 2px; height: 2px; }
+
+@keyframes floatParticle {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.15;
+  }
+  25% {
+    transform: translate(30px, -20px) scale(1.3);
+    opacity: 0.25;
+  }
+  50% {
+    transform: translate(-15px, -40px) scale(0.8);
+    opacity: 0.1;
+  }
+  75% {
+    transform: translate(20px, -10px) scale(1.1);
+    opacity: 0.2;
+  }
+}
+
+/* ───────────────────────────── Breathing icon animation ───────────────────────────── */
+
+.icon-breathe {
+  animation: iconBreathe 3s ease-in-out infinite;
+}
+
+@keyframes iconBreathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+}
+
+/* ───────────────────────────── Dock spring bounce ───────────────────────────── */
+
+.dock-spring {
+  animation: dockSpring 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes dockSpring {
+  from {
+    transform: translateX(-50%) translateY(80px) scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* ───────────────────────────── Interactive card lift ───────────────────────────── */
+
+.card-lift {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.3s ease,
+              border-color 0.3s ease;
+}
+
+.card-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 44px rgba(91, 106, 245, 0.1),
+              0 0 0 1px rgba(124, 135, 247, 0.15);
+}
+
+/* ───────────────────────────── Hover shine sweep ───────────────────────────── */
+
+.hover-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.hover-shine::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -80%;
+  width: 60%;
+  height: 200%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    transparent 100%
+  );
+  transform: skewX(-20deg);
+  transition: left 0.6s ease;
+  pointer-events: none;
+}
+
+.hover-shine:hover::after {
+  left: 130%;
+}
+
+/* ───────────────────────────── Email row entrance stagger ───────────────────────────── */
+
+.email-row-enter {
+  animation: emailRowEnter 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes emailRowEnter {
+  from {
+    opacity: 0;
+    transform: translateX(-12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+/* ───────────────────────────── Active indicator dot ───────────────────────────── */
+
+.active-dot {
+  position: relative;
+}
+
+.active-dot::after {
+  content: "";
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--primary);
+  animation: dotPulse 2s ease-in-out infinite;
+}
+
+@keyframes dotPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: translateX(-50%) scale(1.5);
+  }
+}
+
+/* ───────────────────────────── Tag badge bounce ───────────────────────────── */
+
+.badge-bounce {
+  animation: badgeBounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes badgeBounce {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ───────────────────────────── Smooth view transition ───────────────────────────── */
+
+.view-transition {
+  animation: viewTransition 0.4s ease-out both;
+}
+
+@keyframes viewTransition {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ───────────────────────────── Search focus ring glow ───────────────────────────── */
+
+.search-glow:focus-within {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px rgba(124, 135, 247, 0.12),
+              0 0 20px rgba(124, 135, 247, 0.08);
+}
+
+/* ───────────────────────────── Noise texture overlay ───────────────────────────── */
+
+.noise-overlay::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.018;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px 256px;
+  mix-blend-mode: overlay;
+}
+
+/* ───────────────────────────── Smooth scrollbar ───────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
+  transition: background 0.2s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}
+
+/* ───────────────────────────── Loading spinner ───────────────────────────── */
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ───────────────────────────── Ripple click effect (utility) ───────────────────────────── */
+
+.ripple-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple-container::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at var(--ripple-x, 50%) var(--ripple-y, 50%), var(--primary) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+.ripple-container:active::after {
+  opacity: 0.08;
+}
+
+/* ───────────────────────────── Count badge shimmer ───────────────────────────── */
+
+.count-badge {
+  position: relative;
+  overflow: hidden;
+}
+
+.count-badge::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  animation: countShimmer 3s ease-in-out infinite;
+}
+
+@keyframes countShimmer {
+  0%, 70%, 100% { left: -100%; }
+  85% { left: 100%; }
 }
