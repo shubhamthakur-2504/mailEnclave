@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react"
 import Link from "next/link"
-import { Moon, Sun, LogOut } from "lucide-react"
+import { Moon, Sun, LogOut, Shield } from "lucide-react"
 import { useRouter, usePathname } from "next/navigation"
 import { useAuthStore } from "@/stores/auth-store"
 import { logoutRequest } from "@/lib/api/auth-api"
@@ -56,9 +56,10 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="glass-panel sticky top-0 z-50 w-full border-b border-border px-5 md:px-8 py-3 flex items-center justify-between">
+    <nav className="glass-panel sticky top-0 z-50 w-full border-b border-border px-5 md:px-8 py-3 flex items-center justify-between fade-in-up">
       <div className="flex items-center gap-5">
-        <Link href="/" className="font-semibold tracking-tight text-foreground transition-colors duration-200 hover:text-foreground/80">
+        <Link href="/" className="group inline-flex items-center gap-1.5 font-semibold tracking-tight text-foreground transition-colors duration-200 hover:text-foreground/80">
+          <Shield className="size-4 text-primary transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
           Mail<span className="hero-gradient-text">Enclave</span>
         </Link>
         {mounted && user && !isDashboard && (
@@ -77,7 +78,7 @@ export default function Navbar() {
       <div className="flex items-center gap-3">
         {mounted ? (
           user ? (
-            <div className="hidden md:flex items-center gap-3">
+            <div className="hidden md:flex items-center gap-3 fade-in-up">
               <div className="flex flex-col items-end gap-0.5">
                 <span className="text-xs font-medium text-foreground">{user.email}</span>
                 <span className="text-xs text-muted-foreground">Member</span>
@@ -85,7 +86,7 @@ export default function Navbar() {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:bg-white/20 hover:text-foreground dark:hover:bg-white/10"
+                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all duration-300 hover:bg-white/20 hover:text-foreground hover:-translate-y-0.5 active:scale-[0.95] dark:hover:bg-white/10"
               >
                 <LogOut className="size-3.5" />
                 Logout
@@ -93,10 +94,10 @@ export default function Navbar() {
             </div>
           ) : (
             <>
-              <Link href="/login" className="hidden sm:inline-flex rounded-full px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground">
+              <Link href="/login" className="hidden sm:inline-flex rounded-full px-3 py-1 text-xs font-medium text-muted-foreground transition-all duration-300 hover:text-foreground hover:-translate-y-0.5">
                 Login
               </Link>
-              <Link href="/register" className="hidden sm:inline-flex rounded-full px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground">
+              <Link href="/register" className="hidden sm:inline-flex rounded-full px-3 py-1 text-xs font-medium text-muted-foreground transition-all duration-300 hover:text-foreground hover:-translate-y-0.5">
                 Register
               </Link>
             </>
@@ -106,10 +107,10 @@ export default function Navbar() {
           type="button"
           onClick={toggle}
           aria-label="Toggle theme"
-          className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-transparent text-foreground/80 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/45 hover:text-foreground active:scale-95 dark:hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-transparent text-foreground/80 transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/45 hover:text-foreground hover:rotate-12 active:scale-90 dark:hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
         >
           {mounted ? (
-            theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />
+            theme === "dark" ? <Sun className="size-4 transition-transform duration-500" /> : <Moon className="size-4 transition-transform duration-500" />
           ) : (
             <Moon className="size-4" />
           )}
