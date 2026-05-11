@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { addConfigRequest, getConfigEmailsRequest, listConfigsRequest } from '@/lib/api/config-api'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { addConfigRequest, getConfigEmailsRequest, listConfigsRequest, getPrivateTagsRequest, addPrivateTagRequest, removePrivateTagRequest } from '@/lib/api/config-api'
 import { useAuthStore } from '@/stores/auth-store'
 import { subscribeConfigEvents } from '@/lib/api/config-api'
 import Dock from '@/components/dashboard/dock'
@@ -37,6 +37,7 @@ export default function DashboardPage() {
   const accessToken = useAuthStore((state) => state.accessToken)
   const [openEmailId, setOpenEmailId] = useState<string | null>(null)
   const [openEmail, setOpenEmail] = useState<any | null>(null)
+  const [privateTags, setPrivateTags] = useState<string[]>([])
   const isVaultView = activeView === 'vault'
   const namespaces = useMemo(() => configs.map((config) => config.namespace), [configs])
   const activeConfig = useMemo(
@@ -85,6 +86,33 @@ export default function DashboardPage() {
     }
   }, [])
 
+  // Load private tags when active config changes
+  useEffect(() => {
+    if (!activeConfig) {
+      setPrivateTags([])
+      return
+    }
+
+    let isMounted = true
+    const loadPrivateTags = async () => {
+      try {
+        const tags = await getPrivateTagsRequest(activeConfig.id)
+        if (isMounted) {
+          setPrivateTags(tags.map((t) => t.tag))
+        }
+      } catch {
+        if (isMounted) {
+          setPrivateTags([])
+        }
+      }
+    }
+
+    loadPrivateTags()
+    return () => {
+      isMounted = false
+    }
+  }, [activeConfig])
+
   useEffect(() => {
     if (!activeConfig) {
       setEmails([])
@@ -108,6 +136,9 @@ export default function DashboardPage() {
           subject: email.subject ?? '(no subject)',
           namespace: activeConfig.namespace,
           receivedAt: email.timestamp ? new Date(email.timestamp).toLocaleString() : 'just now',
+          from: email.from ?? null,
+          text: email.text ?? null,
+          isPrivate: !!email.isPrivate,
           sensitive: false,
         }))
 
@@ -138,6 +169,7 @@ export default function DashboardPage() {
             subject: payload.subject ?? '(no subject)',
             namespace: activeConfig.namespace,
             receivedAt: new Date(payload.receivedAt).toLocaleString(),
+            isPrivate: !!payload.isPrivate,
             sensitive: false,
           }
 
@@ -163,9 +195,12 @@ export default function DashboardPage() {
     }
   }, [activeView])
 
+  const publicEmails = useMemo(() => emails.filter((item) => item.namespace === activeNamespace && !item.isPrivate), [emails, activeNamespace])
+  const privateEmails = useMemo(() => emails.filter((item) => item.namespace === activeNamespace && item.isPrivate), [emails, activeNamespace])
+  const visibleEmails = isVaultView ? privateEmails : publicEmails
+
   const tags = useMemo<TagItem[]>(() => {
-    const inNamespace = emails.filter((item) => item.namespace === activeNamespace)
-    const scoped = inNamespace
+    const scoped = visibleEmails
     const counts = scoped.reduce<Record<string, number>>((acc, item) => {
       acc[item.tag] = (acc[item.tag] || 0) + 1
       return acc
@@ -177,7 +212,7 @@ export default function DashboardPage() {
         .sort((a, b) => a[0].localeCompare(b[0]))
         .map(([name, count]) => ({ name, count })),
     ]
-  }, [activeNamespace, emails, isVaultView])
+  }, [visibleEmails])
 
   useEffect(() => {
     if (!tags.find((tag) => tag.name === activeTag)) {
@@ -186,16 +221,18 @@ export default function DashboardPage() {
   }, [tags, activeTag])
 
   const filteredEmails = useMemo(() => {
-    const inNamespace = emails.filter((item) => item.namespace === activeNamespace)
-    const scoped = inNamespace
+    const scoped = visibleEmails
     const inTag = activeTag === 'all' ? scoped : scoped.filter((item) => item.tag === activeTag)
     const query = search.trim().toLowerCase()
     const matched = query
-      ? inTag.filter((item) => item.tag.toLowerCase().includes(query) || item.subject.toLowerCase().includes(query))
+      ? inTag.filter((item) => {
+          const from = item.from ?? ''
+          return item.tag.toLowerCase().includes(query) || item.subject.toLowerCase().includes(query) || from.toLowerCase().includes(query)
+        })
       : inTag
 
     return matched
-  }, [activeNamespace, activeTag, emails, isVaultView, search])
+  }, [activeTag, search, visibleEmails])
 
   const handleVaultClick = () => {
     setActiveView('vault')
@@ -258,6 +295,46 @@ export default function DashboardPage() {
       setIsSavingNamespace(false)
     }
   }
+
+  // ── Private tag handlers ─────────────────────────────────────
+
+  const handleMakePrivate = useCallback(async (tag: string) => {
+    if (!activeConfig) return
+    try {
+      await addPrivateTagRequest(activeConfig.id, tag)
+      // Update local private tags list
+      setPrivateTags((prev) => prev.includes(tag) ? prev : [...prev, tag])
+      // Mark all emails with this tag as private locally
+      setEmails((prev) =>
+        prev.map((email) =>
+          email.tag === tag && email.namespace === activeNamespace
+            ? { ...email, isPrivate: true }
+            : email
+        )
+      )
+    } catch {
+      // ignore error
+    }
+  }, [activeConfig, activeNamespace])
+
+  const handleMakePublic = useCallback(async (tag: string) => {
+    if (!activeConfig) return
+    try {
+      await removePrivateTagRequest(activeConfig.id, tag)
+      // Remove from local private tags list
+      setPrivateTags((prev) => prev.filter((t) => t !== tag))
+      // Mark all emails with this tag as public locally
+      setEmails((prev) =>
+        prev.map((email) =>
+          email.tag === tag && email.namespace === activeNamespace
+            ? { ...email, isPrivate: false }
+            : email
+        )
+      )
+    } catch {
+      // ignore error
+    }
+  }, [activeConfig, activeNamespace])
 
   return (
     <main className={`noise-overlay relative min-h-screen overflow-hidden px-4 pt-6 md:px-8 transition-all duration-500 ${openEmail ? 'pb-6' : 'pb-32'}`}>
@@ -328,14 +405,26 @@ export default function DashboardPage() {
           </div>
         ) : (
           <div key={`inbox-${activeView}`} className={`view-transition grid gap-4 md:grid-cols-[220px_1fr]`}>
-            <TagsPanel
-              tags={tags}
-              activeTag={activeTag}
-              isVaultView={isVaultView}
-              vaultUnlocked={vaultUnlocked}
-              onSelectTag={setActiveTag}
-              onRequirePasskey={promptPasskey}
-            />
+            {isVaultView && !vaultUnlocked ? (
+              <aside className="card-lift rounded-2xl border border-border bg-card p-4 backdrop-blur-md transition-all duration-300 hover:border-primary/30 slide-in-left">
+                <div className="flex min-h-52 flex-col items-center justify-center rounded-xl border border-dashed border-destructive/40 bg-destructive/5 p-6 text-center scale-in">
+                  <p className="mb-1 text-sm font-semibold text-foreground">Vault is locked</p>
+                  <p className="text-xs text-muted-foreground">Unlock the vault to reveal private tags and mail.</p>
+                </div>
+              </aside>
+            ) : (
+              <TagsPanel
+                tags={tags}
+                activeTag={activeTag}
+                isVaultView={isVaultView}
+                vaultUnlocked={vaultUnlocked}
+                onSelectTag={setActiveTag}
+                onRequirePasskey={promptPasskey}
+                privateTags={privateTags}
+                onMakePrivate={handleMakePrivate}
+                onMakePublic={handleMakePublic}
+              />
+            )}
             {openEmail ? (
               <div className="order-2">
                 <MailDetail email={openEmail} onClose={() => { setOpenEmailId(null); setOpenEmail(null); }} />
@@ -363,6 +452,9 @@ export default function DashboardPage() {
                     }
                   })()
                 }}
+                privateTags={privateTags}
+                onMakePrivate={handleMakePrivate}
+                onMakePublic={handleMakePublic}
               />
             )}
             
