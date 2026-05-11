@@ -33,5 +33,15 @@ export const testmailEmailsQuerySchema = z.object({
   spam_report: optionalBoolean,
 });
 
+export const privateTagSchema = z.object({
+  tag: z.string().trim().min(1, 'Tag is required').max(255, 'Tag too long'),
+});
+
+export const privateTagParamSchema = z.object({
+  tag: z.string().trim().min(1, 'Tag is required').max(255, 'Tag too long'),
+});
+
 export type AddTestmailConfigInput = z.infer<typeof addTestmailConfigSchema>;
 export type TestmailEmailsQueryInput = z.infer<typeof testmailEmailsQuerySchema>;
+export type PrivateTagInput = z.infer<typeof privateTagSchema>;
+export type PrivateTagParamInput = z.infer<typeof privateTagParamSchema>;

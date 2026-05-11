@@ -28,6 +28,11 @@ export const upsertTestmailConfig = (data: {
       lastSyncedAt: true,
       lastAccessedAt: true,
       createdAt: true,
+      privateTags: {
+        select: {
+          tag: true,
+        },
+      },
     },
   });
 };
@@ -59,6 +64,11 @@ export const getConfigById = (configId: string, userId: string) => {
       lastAccessedAt: true,
       createdAt: true,
       userId: true,
+      privateTags: {
+        select: {
+          tag: true,
+        },
+      },
       _count: {
         select: { emails: true },
       },
@@ -83,6 +93,11 @@ export const getConfigByIdWithApiKey = (configId: string, userId: string) => {
       lastAccessedAt: true,
       userId: true,
       createdAt: true,
+      privateTags: {
+        select: {
+          tag: true,
+        },
+      },
     },
   }).then((config) => {
     if (config && config.userId !== userId) {
@@ -102,6 +117,11 @@ export const getConfigsForSync = () => {
       lastSyncedAt: true,
       lastAccessedAt: true,
       createdAt: true,
+      privateTags: {
+        select: {
+          tag: true,
+        },
+      },
     },
     orderBy: [
       { lastAccessedAt: 'desc' },
