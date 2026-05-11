@@ -1,5 +1,6 @@
 import { encrypt } from '../lib/crypto.js';
 import { upsertTestmailConfig, getConfigsByUserId, getConfigById, deleteConfig } from '../repositories/config.repository.js';
+import { addPrivateTagForConfig, listPrivateTagsByConfigId, removePrivateTagForConfig } from '../repositories/private-tag.repository.js';
 import prisma from '../db/prisma.js';
 
 export const addTestmailConfig = async (input: {
@@ -96,6 +97,69 @@ export const getDashboardStats = async (userId: string) => {
         memberSince: user?.createdAt,
         email: user?.email,
       },
+    },
+  };
+};
+
+export const listPrivateTags = async (configId: string, userId: string) => {
+  const config = await getConfigById(configId, userId);
+  if (!config) {
+    return {
+      status: 404,
+      body: {
+        error: 'Config not found',
+      },
+    };
+  }
+
+  const tags = await listPrivateTagsByConfigId(configId, userId);
+  return {
+    status: 200,
+    body: {
+      config,
+      privateTags: tags,
+    },
+  };
+};
+
+export const markTagPrivate = async (configId: string, userId: string, tag: string) => {
+  const result = await addPrivateTagForConfig(configId, userId, tag);
+  if (!result) {
+    return {
+      status: 404,
+      body: {
+        error: 'Config not found',
+      },
+    };
+  }
+
+  return {
+    status: 200,
+    body: {
+      message: 'Tag marked private',
+      privateTag: result.privateTag,
+      backfilled: result.backfillCount,
+    },
+  };
+};
+
+export const unmarkTagPrivate = async (configId: string, userId: string, tag: string) => {
+  const result = await removePrivateTagForConfig(configId, userId, tag);
+  if (!result) {
+    return {
+      status: 404,
+      body: {
+        error: 'Config not found',
+      },
+    };
+  }
+
+  return {
+    status: 200,
+    body: {
+      message: 'Tag unmarked private',
+      deleted: result.deletedCount,
+      backfilled: result.backfillCount,
     },
   };
 };

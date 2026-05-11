@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
-import { addTestmailConfig as addTestmailConfigService, listConfigs as listConfigsService, getConfig as getConfigService, removeConfig as removeConfigService, getDashboardStats as getDashboardStatsService } from '../services/config.service.js';
-import { addTestmailConfigSchema } from '../validators/config.validator.js';
+import { addTestmailConfig as addTestmailConfigService, listConfigs as listConfigsService, getConfig as getConfigService, removeConfig as removeConfigService, getDashboardStats as getDashboardStatsService, listPrivateTags as listPrivateTagsService, markTagPrivate as markTagPrivateService, unmarkTagPrivate as unmarkTagPrivateService } from '../services/config.service.js';
+import { addTestmailConfigSchema, privateTagSchema, privateTagParamSchema } from '../validators/config.validator.js';
 import { formatZodErrors } from '../validators/formatErrors.js';
 import { listEmailsByConfigId } from '../repositories/email.repository.js';
 import { touchTestmailNamespace } from '../services/testmail-sync.service.js';
@@ -98,9 +98,11 @@ export const getConfigEmails = async (req: Request, res: Response, next: NextFun
         testmailId: email.testmailId,
         tag: email.tag,
         subject: email.subject,
+        from: email.from,
         timestamp: email.receivedAt.getTime(),
         receivedAt: email.receivedAt,
         html: email.htmlBody,
+        text: email.textBody,
         isPrivate: email.isPrivate,
       })),
     });
@@ -117,6 +119,62 @@ export const getDashboardStats = async (req: Request, res: Response, next: NextF
     }
 
     const result = await getDashboardStatsService(userId);
+    return res.status(result.status).json(result.body);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getPrivateTags = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const result = await listPrivateTagsService(id, userId);
+    return res.status(result.status).json(result.body);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const addPrivateTag = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const validation = privateTagSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: formatZodErrors(validation.error) });
+    }
+
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const result = await markTagPrivateService(id, userId, validation.data.tag);
+    return res.status(result.status).json(result.body);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const removePrivateTag = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const tagValue = Array.isArray(req.params.tag) ? req.params.tag[0] : req.params.tag;
+    const validation = privateTagParamSchema.safeParse({ tag: tagValue });
+    if (!validation.success) {
+      return res.status(400).json({ error: formatZodErrors(validation.error) });
+    }
+
+    const result = await unmarkTagPrivateService(id, userId, validation.data.tag);
     return res.status(result.status).json(result.body);
   } catch (error) {
     next(error);
