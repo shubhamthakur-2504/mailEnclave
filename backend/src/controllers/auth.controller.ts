@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
-import { loginUser, setupVaultPin, signupUser, issueRefreshTokenForUser } from '../services/auth.service.js';
+import { loginUser, setupVaultPin, verifyVaultPin, signupUser, issueRefreshTokenForUser } from '../services/auth.service.js';
 import { revokeAllRefreshTokensForUser, findRefreshTokenById } from '../repositories/refresh.repository.js';
 import { findUserById } from '../repositories/user.repository.js';
 import { signupSchema, loginSchema, setupVaultSchema } from '../validators/auth.validator.js';
@@ -84,6 +84,26 @@ export const setupVault = async (req: Request, res: Response, next: NextFunction
   }
 };
 
+export const verifyVault = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const validation = setupVaultSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: formatZodErrors(validation.error) });
+    }
+
+    const { pin } = validation.data;
+    const result = await verifyVaultPin({ userId, pin });
+    return res.status(result.status).json(result.body);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const me = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.userId;
@@ -92,7 +112,7 @@ export const me = async (req: Request, res: Response, next: NextFunction) => {
     const user = await findUserById(userId);
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    return res.json({ id: user.id, email: user.email });
+    return res.json({ id: user.id, email: user.email, hasVaultPin: !!user.vaultPinHash });
   } catch (err) {
     next(err);
   }

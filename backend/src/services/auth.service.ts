@@ -2,7 +2,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { JWT_SECRET } from '../constants/index.js';
-import { createUser, findUserByEmail, updateUserVaultPinHash } from '../repositories/user.repository.js';
+import { createUser, findUserByEmail, findUserById, updateUserVaultPinHash } from '../repositories/user.repository.js';
 import { hashIp } from '../lib/ipHash.js';
 import { createRefreshToken, findRefreshTokenById, markTokenReplaced, revokeAllRefreshTokensForUser } from '../repositories/refresh.repository.js';
 
@@ -59,6 +59,7 @@ export const signupUser = async (
       user: {
         id: user.id,
         email: user.email,
+        hasVaultPin: !!user.vaultPinHash,
       },
     },
   };
@@ -102,6 +103,7 @@ export const loginUser = async (
       user: {
         id: user.id,
         email: user.email,
+        hasVaultPin: !!user.vaultPinHash,
       },
     },
   };
@@ -135,4 +137,18 @@ export const setupVaultPin = async (input: { userId: string; pin: string }) => {
       user,
     },
   };
+};
+
+export const verifyVaultPin = async (input: { userId: string; pin: string }) => {
+  const user = await findUserById(input.userId);
+  if (!user || !user.vaultPinHash) {
+    return { status: 403, body: { error: 'No vault PIN set' } };
+  }
+
+  const ok = await bcrypt.compare(input.pin, user.vaultPinHash);
+  if (!ok) {
+    return { status: 403, body: { error: 'Invalid PIN' } };
+  }
+
+  return { status: 200, body: { message: 'Vault unlocked' } };
 };

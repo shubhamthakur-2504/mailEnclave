@@ -18,6 +18,7 @@ export const createUser = (data: { email: string; passwordHash: string }) => {
     select: {
       id: true,
       email: true,
+      vaultPinHash: true,
       createdAt: true,
     },
   });
