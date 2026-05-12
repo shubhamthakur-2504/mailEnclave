@@ -1,7 +1,8 @@
 'use client'
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { addConfigRequest, getConfigEmailsRequest, listConfigsRequest, getPrivateTagsRequest, addPrivateTagRequest, removePrivateTagRequest } from '@/lib/api/config-api'
+import { toast } from 'sonner'
+import { addConfigRequest, updateConfigRequest, getConfigEmailsRequest, listConfigsRequest, getPrivateTagsRequest, addPrivateTagRequest, removePrivateTagRequest } from '@/lib/api/config-api'
 import { useAuthStore } from '@/stores/auth-store'
 import { setupVaultRequest, verifyVaultRequest } from '@/lib/api/auth-api'
 import { subscribeConfigEvents } from '@/lib/api/config-api'
@@ -413,11 +414,32 @@ export default function DashboardPage() {
             <NamespacesView
               namespaces={namespaces}
               activeNamespace={activeNamespace}
+              activeConfigId={activeConfig?.id}
               onSelectNamespace={(namespace) => {
                 setActiveNamespace(namespace)
                 setActiveTag('all')
               }}
               onOpenAddDialog={() => setNamespaceDialogOpen(true)}
+              onUpdateNamespace={async (id, newNamespace, newApiKey) => {
+                try {
+                  const payload: any = {}
+                  if (newNamespace && newNamespace !== activeNamespace) payload.namespace = newNamespace
+                  if (newApiKey) payload.apiKey = newApiKey
+                  
+                  if (Object.keys(payload).length > 0) {
+                    await updateConfigRequest(id, payload)
+                    toast.success('Namespace updated successfully')
+                    
+                    // Update local state without full reload if possible
+                    setConfigs(configs.map(c => c.id === id ? { ...c, namespace: newNamespace || c.namespace } : c))
+                    if (payload.namespace) {
+                      setActiveNamespace(payload.namespace)
+                    }
+                  }
+                } catch (error: any) {
+                  toast.error(error?.response?.data?.error || 'Failed to update namespace')
+                }
+              }}
             />
           </div>
         ) : (

@@ -7,16 +7,28 @@ import { Button } from "@/components/ui/button"
 type NamespacesViewProps = {
   namespaces: string[]
   activeNamespace: string
+  activeConfigId?: string
   onSelectNamespace: (namespace: string) => void
   onOpenAddDialog: () => void
+  onUpdateNamespace?: (id: string, namespace: string, apiKey: string) => Promise<void>
 }
 
 export default function NamespacesView({
   namespaces,
   activeNamespace,
+  activeConfigId,
   onSelectNamespace,
   onOpenAddDialog,
+  onUpdateNamespace,
 }: NamespacesViewProps) {
+  const [editNamespace, setEditNamespace] = React.useState(activeNamespace)
+  const [editApiKey, setEditApiKey] = React.useState("")
+  const [isUpdating, setIsUpdating] = React.useState(false)
+
+  React.useEffect(() => {
+    setEditNamespace(activeNamespace)
+    setEditApiKey("")
+  }, [activeNamespace])
   return (
     <div className="grid gap-4 md:grid-cols-[280px_1fr]">
       <aside className="card-lift rounded-2xl border border-border bg-card p-5 backdrop-blur-md transition-all duration-300 hover:border-primary/30 slide-in-left">
@@ -72,11 +84,62 @@ export default function NamespacesView({
             active: {activeNamespace}
           </span>
         </div>
-        <div className="mt-6 flex min-h-52 flex-col items-center justify-center rounded-xl border border-dashed border-primary/30 bg-primary/5 p-6 text-center scale-in">
-          <Globe2 className="mb-3 size-7 text-primary icon-breathe" />
-          <p className="mb-1 text-sm font-semibold text-foreground">Namespace manager</p>
-          <p className="text-xs text-muted-foreground">Select a namespace on the left or add a new one.</p>
-        </div>
+        {activeConfigId ? (
+          <div className="mt-6 scale-in">
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault()
+                if (activeConfigId && onUpdateNamespace) {
+                  setIsUpdating(true)
+                  try {
+                    await onUpdateNamespace(activeConfigId, editNamespace, editApiKey)
+                    setEditApiKey("")
+                  } finally {
+                    setIsUpdating(false)
+                  }
+                }
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-foreground">Namespace Name</label>
+                <input
+                  type="text"
+                  value={editNamespace}
+                  onChange={(e) => setEditNamespace(e.target.value)}
+                  className="w-full rounded-xl border border-border bg-background/50 px-3 py-2 text-sm text-foreground outline-none transition-all focus:border-primary/50 focus:ring-1 focus:ring-primary/50"
+                  required
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-foreground">API Key</label>
+                <input
+                  type="password"
+                  placeholder="********"
+                  value={editApiKey}
+                  onChange={(e) => setEditApiKey(e.target.value)}
+                  className="w-full rounded-xl border border-border bg-background/50 px-3 py-2 text-sm text-foreground outline-none transition-all focus:border-primary/50 focus:ring-1 focus:ring-primary/50"
+                />
+                <p className="mt-1.5 text-[10px] text-muted-foreground">Leave blank to keep current API key unchanged.</p>
+              </div>
+              <div className="flex justify-end pt-2">
+                <Button
+                  type="submit"
+                  disabled={isUpdating || !editNamespace.trim()}
+                  className="rounded-full bg-primary px-6 text-primary-foreground shadow-[0_0_18px_var(--glow-primary)] transition-all duration-300 hover:-translate-y-0.5 hover:brightness-110 active:scale-[0.97]"
+                >
+                  {isUpdating ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        ) : (
+          <div className="mt-6 flex min-h-52 flex-col items-center justify-center rounded-xl border border-dashed border-primary/30 bg-primary/5 p-6 text-center scale-in">
+            <Globe2 className="mb-3 size-7 text-primary icon-breathe" />
+            <p className="mb-1 text-sm font-semibold text-foreground">Namespace manager</p>
+            <p className="text-xs text-muted-foreground">Select a namespace on the left or add a new one.</p>
+          </div>
+        )}
       </article>
     </div>
   )

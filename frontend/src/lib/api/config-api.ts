@@ -65,6 +65,11 @@ export const addConfigRequest = async (payload: TestmailConfigPayload) => {
   return data.config
 }
 
+export const updateConfigRequest = async (id: string, payload: Partial<TestmailConfigPayload>) => {
+  const { data } = await protectedApi.put<{ message: string; config: UserConfig }>(`/config/${id}`, payload)
+  return data.config
+}
+
 export const deleteConfigRequest = async (id: string) => {
   const { data } = await protectedApi.delete<{ message: string; config: UserConfig }>(`/config/${id}`)
   return data
