@@ -36,3 +36,15 @@ export const updateUserVaultPinHash = (userId: string, vaultPinHash: string) => 
     },
   });
 };
+
+export const updateUserPasswordHash = (userId: string, passwordHash: string) => {
+  return prisma.user.update({
+    where: { id: userId },
+    data: { passwordHash },
+    select: {
+      id: true,
+      email: true,
+      createdAt: true,
+    },
+  });
+};

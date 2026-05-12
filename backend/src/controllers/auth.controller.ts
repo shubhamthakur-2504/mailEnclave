@@ -1,8 +1,8 @@
 import { NextFunction, Request, Response } from 'express';
-import { loginUser, setupVaultPin, verifyVaultPin, signupUser, issueRefreshTokenForUser } from '../services/auth.service.js';
+import { loginUser, setupVaultPin, verifyVaultPin, changeUserPassword, resetVaultPin, signupUser, issueRefreshTokenForUser } from '../services/auth.service.js';
 import { revokeAllRefreshTokensForUser, findRefreshTokenById } from '../repositories/refresh.repository.js';
 import { findUserById } from '../repositories/user.repository.js';
-import { signupSchema, loginSchema, setupVaultSchema } from '../validators/auth.validator.js';
+import { signupSchema, loginSchema, setupVaultSchema, changePasswordSchema, resetVaultPinSchema } from '../validators/auth.validator.js';
 import { IS_PROD } from '../constants/index.js';
 import { formatZodErrors } from '../validators/formatErrors.js';
 
@@ -139,6 +139,42 @@ export const logout = async (req: Request, res: Response, next: NextFunction) =>
     res.clearCookie('refreshToken', { httpOnly: true, secure: IS_PROD, sameSite: 'lax' });
 
     return res.json({ message: 'Logged out' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const changePassword = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.userId;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const validation = changePasswordSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: formatZodErrors(validation.error) });
+    }
+
+    const { oldPassword, newPassword } = validation.data;
+    const result = await changeUserPassword({ userId, oldPassword, newPassword });
+    return res.status(result.status).json(result.body);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const resetPin = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.userId;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const validation = resetVaultPinSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: formatZodErrors(validation.error) });
+    }
+
+    const { password, newPin } = validation.data;
+    const result = await resetVaultPin({ userId, password, newPin });
+    return res.status(result.status).json(result.body);
   } catch (err) {
     next(err);
   }

@@ -2,7 +2,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { JWT_SECRET } from '../constants/index.js';
-import { createUser, findUserByEmail, findUserById, updateUserVaultPinHash } from '../repositories/user.repository.js';
+import { createUser, findUserByEmail, findUserById, updateUserVaultPinHash, updateUserPasswordHash } from '../repositories/user.repository.js';
 import { hashIp } from '../lib/ipHash.js';
 import { createRefreshToken, findRefreshTokenById, markTokenReplaced, revokeAllRefreshTokensForUser } from '../repositories/refresh.repository.js';
 
@@ -151,4 +151,38 @@ export const verifyVaultPin = async (input: { userId: string; pin: string }) => 
   }
 
   return { status: 200, body: { message: 'Vault unlocked' } };
+};
+
+export const changeUserPassword = async (input: { userId: string; oldPassword: string; newPassword: string }) => {
+  const user = await findUserById(input.userId);
+  if (!user) {
+    return { status: 404, body: { error: 'User not found' } };
+  }
+
+  const isValid = await bcrypt.compare(input.oldPassword, user.passwordHash);
+  if (!isValid) {
+    return { status: 401, body: { error: 'Incorrect current password' } };
+  }
+
+  const newHash = await bcrypt.hash(input.newPassword, SALT_ROUNDS);
+  await updateUserPasswordHash(user.id, newHash);
+
+  return { status: 200, body: { message: 'Password changed successfully' } };
+};
+
+export const resetVaultPin = async (input: { userId: string; password: string; newPin: string }) => {
+  const user = await findUserById(input.userId);
+  if (!user) {
+    return { status: 404, body: { error: 'User not found' } };
+  }
+
+  // Require account password to authorize the PIN reset
+  const isPasswordValid = await bcrypt.compare(input.password, user.passwordHash);
+  if (!isPasswordValid) {
+    return { status: 401, body: { error: 'Incorrect account password. Cannot reset vault PIN.' } };
+  }
+
+  const vaultPinHash = await bcrypt.hash(input.newPin, SALT_ROUNDS);
+  await updateUserVaultPinHash(input.userId, vaultPinHash);
+  return { status: 200, body: { message: 'Vault PIN reset successfully' } };
 };
