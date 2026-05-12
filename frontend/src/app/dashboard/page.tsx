@@ -12,6 +12,7 @@ import MailDetail from '@/components/dashboard/mail-detail'
 import NamespacesView from '@/components/dashboard/namespaces-view'
 import NamespaceDialog from '@/components/dashboard/namespace-dialog'
 import PasskeyDialog from '@/components/dashboard/passkey-dialog'
+import SettingsView from '@/components/dashboard/settings-view'
 import TagsPanel from '@/components/dashboard/tags-panel'
 import TopBar from '@/components/dashboard/top-bar'
 import type { DockView, EmailItem, TagItem } from '@/components/dashboard/types'
@@ -409,7 +410,19 @@ export default function DashboardPage() {
           hidden={!!openEmail}
         />
 
-        {activeView === 'namespaces' ? (
+        {activeView === 'settings' ? (
+          <div key="settings-view" className="view-transition">
+            <SettingsView
+              userEmail={user?.email ?? ''}
+              hasVaultPin={hasVaultPin}
+              onVaultPinReset={() => {
+                // lock the vault so user must re-enter the new PIN
+                setVaultUnlocked(false)
+                setHasVaultPin(true)
+              }}
+            />
+          </div>
+        ) : activeView === 'namespaces' ? (
           <div key="namespaces-view" className="view-transition">
             <NamespacesView
               namespaces={namespaces}

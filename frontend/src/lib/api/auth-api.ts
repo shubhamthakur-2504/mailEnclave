@@ -58,3 +58,13 @@ export const verifyVaultRequest = async (pin: string) => {
   const { data } = await protectedApi.post('/auth/vault/verify', { pin })
   return data
 }
+
+export const changePasswordRequest = async (oldPassword: string, newPassword: string) => {
+  const { data } = await protectedApi.put('/auth/password', { oldPassword, newPassword })
+  return data
+}
+
+export const resetVaultPinRequest = async (password: string, newPin: string, confirmPin: string) => {
+  const { data } = await protectedApi.put('/auth/vault/reset', { password, newPin, confirmPin })
+  return data
+}
