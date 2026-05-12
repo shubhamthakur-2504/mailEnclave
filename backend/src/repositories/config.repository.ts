@@ -37,6 +37,20 @@ export const upsertTestmailConfig = (data: {
   });
 };
 
+export const updateTestmailConfigById = (configId: string, userId: string, data: { namespace?: string; encryptedApiKey?: string }) => {
+  return prisma.userConfig.update({
+    where: { id: configId, userId },
+    data,
+    select: {
+      id: true,
+      namespace: true,
+      lastSyncedAt: true,
+      lastAccessedAt: true,
+      createdAt: true,
+    },
+  });
+};
+
 export const getConfigsByUserId = (userId: string) => {
   return prisma.userConfig.findMany({
     where: { userId },

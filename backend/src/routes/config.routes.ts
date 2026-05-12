@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { addTestmailConfig, listConfigs, getConfig, getConfigEmails, deleteConfig, getDashboardStats, subscribeSse, getPrivateTags, addPrivateTag, removePrivateTag } from '../controllers/config.controller.js';
+import { addTestmailConfig, updateConfig, listConfigs, getConfig, getConfigEmails, deleteConfig, getDashboardStats, subscribeSse, getPrivateTags, addPrivateTag, removePrivateTag } from '../controllers/config.controller.js';
 import { protect } from '../middlewares/auth.middleware.js';
 import { protectSse } from '../middlewares/sseAuth.middleware.js';
 
@@ -17,6 +17,7 @@ router.delete('/:id/private-tags/:tag', protect, removePrivateTag);
 router.get('/:id/emails', protect, getConfigEmails);
 router.get('/:id/subscribe', protectSse, subscribeSse);
 router.get('/:id', protect, getConfig);
+router.put('/:id', protect, updateConfig);
 router.delete('/:id', protect, deleteConfig);
 
 export default router;

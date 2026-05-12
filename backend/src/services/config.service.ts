@@ -24,6 +24,40 @@ export const addTestmailConfig = async (input: {
   };
 };
 
+export const updateTestmailConfig = async (configId: string, userId: string, input: { namespace?: string; apiKey?: string }) => {
+  const config = await getConfigById(configId, userId);
+  if (!config) {
+    return {
+      status: 404,
+      body: { error: 'Config not found' },
+    };
+  }
+
+  const dataToUpdate: any = {};
+  if (input.namespace) dataToUpdate.namespace = input.namespace;
+  if (input.apiKey) dataToUpdate.encryptedApiKey = encrypt(input.apiKey);
+
+  const updatedConfig = await prisma.userConfig.update({
+    where: { id: configId },
+    data: dataToUpdate,
+    select: {
+      id: true,
+      namespace: true,
+      lastSyncedAt: true,
+      lastAccessedAt: true,
+      createdAt: true,
+    },
+  });
+
+  return {
+    status: 200,
+    body: {
+      message: 'Config updated successfully',
+      config: updatedConfig,
+    },
+  };
+};
+
 export const listConfigs = async (userId: string) => {
   const configs = await getConfigsByUserId(userId);
   return {

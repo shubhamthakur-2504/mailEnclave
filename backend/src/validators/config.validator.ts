@@ -5,6 +5,11 @@ export const addTestmailConfigSchema = z.object({
   apiKey: z.string().min(1, 'API key is required'),
 });
 
+export const updateTestmailConfigSchema = z.object({
+  namespace: z.string().min(1, 'Namespace is required').max(255, 'Namespace too long').optional(),
+  apiKey: z.string().min(1, 'API key is required').optional(),
+});
+
 const optionalBoolean = z.preprocess((value) => {
   if (value === undefined || value === null || value === '') {
     return undefined;
