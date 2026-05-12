@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { addConfigRequest, getConfigEmailsRequest, listConfigsRequest, getPrivateTagsRequest, addPrivateTagRequest, removePrivateTagRequest } from '@/lib/api/config-api'
 import { useAuthStore } from '@/stores/auth-store'
+import { setupVaultRequest, verifyVaultRequest } from '@/lib/api/auth-api'
 import { subscribeConfigEvents } from '@/lib/api/config-api'
 import Dock from '@/components/dashboard/dock'
 import MailList from '@/components/dashboard/mail-list'
@@ -35,10 +36,14 @@ export default function DashboardPage() {
   const [emails, setEmails] = useState<EmailItem[]>([])
   const [isEmailsLoading, setIsEmailsLoading] = useState(false)
   const accessToken = useAuthStore((state) => state.accessToken)
+  const user = useAuthStore((state) => state.user)
+  const setHasVaultPin = useAuthStore((state) => state.setHasVaultPin)
   const [openEmailId, setOpenEmailId] = useState<string | null>(null)
   const [openEmail, setOpenEmail] = useState<any | null>(null)
   const [privateTags, setPrivateTags] = useState<string[]>([])
+  const [isSubmittingPasskey, setIsSubmittingPasskey] = useState(false)
   const isVaultView = activeView === 'vault'
+  const hasVaultPin = user?.hasVaultPin ?? false
   const namespaces = useMemo(() => configs.map((config) => config.namespace), [configs])
   const activeConfig = useMemo(
     () => configs.find((config) => config.namespace === activeNamespace),
@@ -226,9 +231,9 @@ export default function DashboardPage() {
     const query = search.trim().toLowerCase()
     const matched = query
       ? inTag.filter((item) => {
-          const from = item.from ?? ''
-          return item.tag.toLowerCase().includes(query) || item.subject.toLowerCase().includes(query) || from.toLowerCase().includes(query)
-        })
+        const from = item.from ?? ''
+        return item.tag.toLowerCase().includes(query) || item.subject.toLowerCase().includes(query) || from.toLowerCase().includes(query)
+      })
       : inTag
 
     return matched
@@ -249,18 +254,33 @@ export default function DashboardPage() {
     setPasskeyDialogOpen(true)
   }
 
-  const handlePasskeySubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handlePasskeySubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
-    if (passkey !== '4242') {
-      setPasskeyError('Invalid passkey. Try again.')
+    if (passkey.length < 4) {
+      setPasskeyError('Passkey must be at least 4 characters.')
       return
     }
 
-    setVaultUnlocked(true)
-    setPasskeyDialogOpen(false)
-    setPasskeyError('')
-    setPasskey('')
+    try {
+      setIsSubmittingPasskey(true)
+      setPasskeyError('')
+      if (hasVaultPin) {
+        await verifyVaultRequest(passkey)
+      } else {
+        await setupVaultRequest(passkey)
+        setHasVaultPin(true)
+      }
+
+      setVaultUnlocked(true)
+      setPasskeyDialogOpen(false)
+      setPasskey('')
+    } catch (error: any) {
+      setPasskeyError(error?.response?.data?.error || 'Invalid passkey. Try again.')
+      setPasskey('')
+    } finally {
+      setIsSubmittingPasskey(false)
+    }
   }
 
   const handleAddNamespace = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -340,19 +360,16 @@ export default function DashboardPage() {
     <main className={`noise-overlay relative min-h-screen overflow-hidden px-4 pt-6 md:px-8 transition-all duration-500 ${openEmail ? 'pb-6' : 'pb-32'}`}>
       <div className="pointer-events-none fixed inset-0 -z-20 overflow-hidden">
         <div
-          className={`absolute -left-1/4 -top-1/3 h-[34rem] w-[34rem] rounded-full blur-3xl transition-all duration-700 ${
-            isVaultView ? 'bg-rose-500/20' : 'bg-blue-500/20'
-          }`}
+          className={`absolute -left-1/4 -top-1/3 h-[34rem] w-[34rem] rounded-full blur-3xl transition-all duration-700 ${isVaultView ? 'bg-rose-500/20' : 'bg-blue-500/20'
+            }`}
         />
         <div
-          className={`absolute right-[-6rem] top-10 h-[28rem] w-[28rem] rounded-full blur-3xl transition-all duration-700 ${
-            isVaultView ? 'bg-rose-400/20' : 'bg-indigo-500/20'
-          }`}
+          className={`absolute right-[-6rem] top-10 h-[28rem] w-[28rem] rounded-full blur-3xl transition-all duration-700 ${isVaultView ? 'bg-rose-400/20' : 'bg-indigo-500/20'
+            }`}
         />
         <div
-          className={`absolute bottom-[-10rem] left-1/3 h-[30rem] w-[30rem] rounded-full blur-3xl transition-all duration-700 ${
-            isVaultView ? 'bg-rose-300/15' : 'bg-blue-400/15'
-          }`}
+          className={`absolute bottom-[-10rem] left-1/3 h-[30rem] w-[30rem] rounded-full blur-3xl transition-all duration-700 ${isVaultView ? 'bg-rose-300/15' : 'bg-blue-400/15'
+            }`}
         />
         {/* Floating particles */}
         <div className="particle" style={{ left: '10%', top: '15%' }} />
@@ -393,15 +410,15 @@ export default function DashboardPage() {
 
         {activeView === 'namespaces' ? (
           <div key="namespaces-view" className="view-transition">
-          <NamespacesView
-            namespaces={namespaces}
-            activeNamespace={activeNamespace}
-            onSelectNamespace={(namespace) => {
-              setActiveNamespace(namespace)
-              setActiveTag('all')
-            }}
-            onOpenAddDialog={() => setNamespaceDialogOpen(true)}
-          />
+            <NamespacesView
+              namespaces={namespaces}
+              activeNamespace={activeNamespace}
+              onSelectNamespace={(namespace) => {
+                setActiveNamespace(namespace)
+                setActiveTag('all')
+              }}
+              onOpenAddDialog={() => setNamespaceDialogOpen(true)}
+            />
           </div>
         ) : (
           <div key={`inbox-${activeView}`} className={`view-transition grid gap-4 md:grid-cols-[220px_1fr]`}>
@@ -457,7 +474,7 @@ export default function DashboardPage() {
                 onMakePublic={handleMakePublic}
               />
             )}
-            
+
           </div>
         )}
       </section>
@@ -482,6 +499,8 @@ export default function DashboardPage() {
         passkey={passkey}
         passkeyError={passkeyError}
         isVaultView={isVaultView}
+        hasVaultPin={hasVaultPin}
+        isLoading={isSubmittingPasskey}
         onPasskeyChange={setPasskey}
         onSubmit={handlePasskeySubmit}
       />

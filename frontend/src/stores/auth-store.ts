@@ -10,6 +10,7 @@ type AuthStoreState = {
   updateTokens: (tokens: Pick<AuthSession, "accessToken">) => void
   clearSession: () => void
   setReady: (value: boolean) => void
+  setHasVaultPin: (hasVaultPin: boolean) => void
 }
 
 export const useAuthStore = create<AuthStoreState>()(
@@ -39,6 +40,10 @@ export const useAuthStore = create<AuthStoreState>()(
           }
         }),
       setReady: (value) => set({ isReady: value }),
+      setHasVaultPin: (hasVaultPin) =>
+        set((state) => ({
+          user: state.user ? { ...state.user, hasVaultPin } : null,
+        })),
     }),
     {
       name: "mailenclave-auth",

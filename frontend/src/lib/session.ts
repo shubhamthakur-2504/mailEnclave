@@ -1,6 +1,7 @@
 export type AuthUser = {
   id: string
   email: string
+  hasVaultPin?: boolean
 }
 
 export type AuthSession = {

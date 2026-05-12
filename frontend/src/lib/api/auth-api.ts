@@ -1,5 +1,6 @@
 import type { AuthSession } from "@/lib/session"
 import { rawApi } from "@/lib/api/transport"
+import { protectedApi } from "@/lib/api/http"
 import { useAuthStore } from "@/stores/auth-store"
 
 export type AuthCredentials = {
@@ -9,7 +10,7 @@ export type AuthCredentials = {
 
 type AuthApiResponse = {
   accessToken: string
-  user: { id: string; email: string }
+  user: { id: string; email: string; hasVaultPin?: boolean }
 }
 
 const normalizeSession = (data: AuthApiResponse): AuthSession => ({
@@ -46,4 +47,14 @@ export const logoutRequest = async () => {
   }
 
   useAuthStore.getState().clearSession()
+}
+
+export const setupVaultRequest = async (pin: string) => {
+  const { data } = await protectedApi.put('/auth/vault', { pin })
+  return data
+}
+
+export const verifyVaultRequest = async (pin: string) => {
+  const { data } = await protectedApi.post('/auth/vault/verify', { pin })
+  return data
 }
