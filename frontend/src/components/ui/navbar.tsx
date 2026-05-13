@@ -78,7 +78,16 @@ export default function Navbar() {
               <Link href="#getting-started" className="text-sm text-muted-foreground transition-all duration-200 hover:-translate-y-0.5 hover:text-foreground">
                 Setup Guide
               </Link>
+              <Link href="/about" className="text-sm text-muted-foreground transition-all duration-200 hover:-translate-y-0.5 hover:text-foreground">
+                About
+              </Link>
             </div>
+          )}
+
+          {!isHome && !isDashboard && (
+            <Link href="/about" className="hidden md:inline-flex text-sm text-muted-foreground transition-all duration-200 hover:-translate-y-0.5 hover:text-foreground">
+              About
+            </Link>
           )}
 
           {mounted && user && !isDashboard && (

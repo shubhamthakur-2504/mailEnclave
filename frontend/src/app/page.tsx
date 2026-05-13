@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import React from "react"
 import Link from "next/link"
 import { useAuthStore } from "@/stores/auth-store"
+import { fetchHealth } from "@/lib/api/health-api"
 import {
   Shield,
   Lock,
@@ -142,6 +143,8 @@ export default function Home() {
 
   useEffect(() => {
     setMounted(true)
+    // Silently wake the backend so it is warm before the user navigates to the dashboard
+    fetchHealth().catch(() => { /* ignore — server may still be starting */ })
   }, [])
 
   return (
