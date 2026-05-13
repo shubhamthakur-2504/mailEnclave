@@ -30,6 +30,7 @@ export type TestmailEmail = {
   html?: string
   from?: string
   isPrivate?: boolean
+  isRead?: boolean
 }
 
 export type TestmailInboxResponse = {
@@ -70,8 +71,8 @@ export const updateConfigRequest = async (id: string, payload: Partial<TestmailC
   return data.config
 }
 
-export const deleteConfigRequest = async (id: string) => {
-  const { data } = await protectedApi.delete<{ message: string; config: UserConfig }>(`/config/${id}`)
+export const deleteConfigRequest = async (id: string, password: string) => {
+  const { data } = await protectedApi.delete<{ message: string; config: UserConfig }>(`/config/${id}`, { data: { password } })
   return data
 }
 
@@ -146,6 +147,20 @@ export const addPrivateTagRequest = async (configId: string, tag: string) => {
 export const removePrivateTagRequest = async (configId: string, tag: string) => {
   const { data } = await protectedApi.delete<{ message: string; deleted: number; backfilled: number }>(
     `/config/${configId}/private-tags/${encodeURIComponent(tag)}`
+  )
+  return data
+}
+
+/* ── Email deletion ──────────────────────────────────────────── */
+
+export const deleteEmailRequest = async (id: string) => {
+  const { data } = await protectedApi.delete<{ success: boolean }>(`/emails/${id}`)
+  return data
+}
+
+export const deleteTagEmailsRequest = async (configId: string, tag: string) => {
+  const { data } = await protectedApi.delete<{ success: boolean; deleted: number }>(
+    `/emails/tags/${configId}/${encodeURIComponent(tag)}`
   )
   return data
 }

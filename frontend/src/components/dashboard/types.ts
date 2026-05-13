@@ -1,5 +1,7 @@
 export type DockView = "inbox" | "vault" | "namespaces" | "settings"
 
+export type ReadFilter = "all" | "read" | "unread"
+
 export type TagItem = {
   name: string
   count: number
@@ -15,4 +17,6 @@ export type EmailItem = {
   text?: string | null
   isPrivate?: boolean
   sensitive: boolean
+  isRead?: boolean
+  isNew?: boolean
 }
