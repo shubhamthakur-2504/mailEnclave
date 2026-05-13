@@ -46,7 +46,12 @@ export const privateTagParamSchema = z.object({
   tag: z.string().trim().min(1, 'Tag is required').max(255, 'Tag too long'),
 });
 
+export const deleteConfigSchema = z.object({
+  password: z.string().min(1, 'Account password is required to delete a namespace'),
+});
+
 export type AddTestmailConfigInput = z.infer<typeof addTestmailConfigSchema>;
 export type TestmailEmailsQueryInput = z.infer<typeof testmailEmailsQuerySchema>;
 export type PrivateTagInput = z.infer<typeof privateTagSchema>;
 export type PrivateTagParamInput = z.infer<typeof privateTagParamSchema>;
+export type DeleteConfigInput = z.infer<typeof deleteConfigSchema>;

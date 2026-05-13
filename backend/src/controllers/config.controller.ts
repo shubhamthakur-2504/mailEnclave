@@ -1,10 +1,12 @@
 import { NextFunction, Request, Response } from 'express';
 import { addTestmailConfig as addTestmailConfigService, updateTestmailConfig as updateTestmailConfigService, listConfigs as listConfigsService, getConfig as getConfigService, removeConfig as removeConfigService, getDashboardStats as getDashboardStatsService, listPrivateTags as listPrivateTagsService, markTagPrivate as markTagPrivateService, unmarkTagPrivate as unmarkTagPrivateService } from '../services/config.service.js';
-import { addTestmailConfigSchema, updateTestmailConfigSchema, privateTagSchema, privateTagParamSchema } from '../validators/config.validator.js';
+import { addTestmailConfigSchema, updateTestmailConfigSchema, privateTagSchema, privateTagParamSchema, deleteConfigSchema } from '../validators/config.validator.js';
 import { formatZodErrors } from '../validators/formatErrors.js';
 import { listEmailsByConfigId } from '../repositories/email.repository.js';
 import { touchTestmailNamespace } from '../services/testmail-sync.service.js';
 import { subscribeToNamespace } from '../services/sse.service.js';
+import { findUserById } from '../repositories/user.repository.js';
+import bcrypt from 'bcrypt';
 
 export const addTestmailConfig = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -82,6 +84,18 @@ export const deleteConfig = async (req: Request, res: Response, next: NextFuncti
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
+    // Require account password for namespace deletion
+    const validation = deleteConfigSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: formatZodErrors(validation.error) });
+    }
+
+    // Verify password
+    const user = await findUserById(userId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    const passwordOk = await bcrypt.compare(validation.data.password, user.passwordHash);
+    if (!passwordOk) return res.status(403).json({ error: 'Incorrect account password' });
+
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const result = await removeConfigService(id, userId);
     return res.status(result.status).json(result.body);
@@ -124,6 +138,7 @@ export const getConfigEmails = async (req: Request, res: Response, next: NextFun
         html: email.htmlBody,
         text: email.textBody,
         isPrivate: email.isPrivate,
+        isRead: email.isRead,
       })),
     });
   } catch (error) {

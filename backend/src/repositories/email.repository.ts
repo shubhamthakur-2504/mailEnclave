@@ -71,6 +71,24 @@ export const getEmailById = (id: string) => {
   });
 };
 
+export const deleteEmailById = (id: string, userId: string) => {
+  return prisma.email.deleteMany({
+    where: { id, userId },
+  });
+};
+
+export const deleteEmailsByTag = (configId: string, tag: string, userId: string) => {
+  return prisma.email.deleteMany({
+    where: { configId, tag, userId },
+  });
+};
+
+export const deleteEmailsByConfigId = (configId: string, userId: string) => {
+  return prisma.email.deleteMany({
+    where: { configId, userId },
+  });
+};
+
 export const markEmailRead = (id: string, userId: string) => {
   return prisma.email.updateMany({
     where: { id, userId },
