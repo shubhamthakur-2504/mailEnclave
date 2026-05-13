@@ -1,8 +1,8 @@
 "use client"
 
-import React from "react"
-import { KeyRound, Mail, ShieldCheck, ShieldOff } from "lucide-react"
-import type { DockView, EmailItem } from "./types"
+import React, { useState } from "react"
+import { KeyRound, Mail, ShieldCheck, ShieldOff, Trash2, CircleDot, Circle, Eye, EyeOff, Filter, Sparkles } from "lucide-react"
+import type { DockView, EmailItem, ReadFilter } from "./types"
 
 type MailListProps = {
   emails: EmailItem[]
@@ -14,6 +14,7 @@ type MailListProps = {
   isLoading?: boolean
   onRequirePasskey: () => void
   onOpen?: (email: EmailItem) => void
+  onDelete?: (email: EmailItem) => void
   privateTags?: string[]
   onMakePrivate?: (tag: string) => void
   onMakePublic?: (tag: string) => void
@@ -29,11 +30,34 @@ export default function MailList({
   isLoading,
   onRequirePasskey,
   onOpen,
+  onDelete,
   privateTags = [],
   onMakePrivate,
   onMakePublic,
 }: MailListProps) {
   const showLockedVaultMessage = activeView === "vault" && !vaultUnlocked
+  const [readFilter, setReadFilter] = useState<ReadFilter>("all")
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  const visibleEmails = React.useMemo(() => {
+    if (readFilter === "read") return emails.filter((e) => e.isRead)
+    if (readFilter === "unread") return emails.filter((e) => !e.isRead)
+    return emails
+  }, [emails, readFilter])
+
+  const unreadCount = emails.filter((e) => !e.isRead).length
+  const readCount = emails.filter((e) => e.isRead).length
+
+  const handleDelete = async (e: React.MouseEvent, email: EmailItem) => {
+    e.stopPropagation()
+    if (!onDelete) return
+    setDeletingId(email.id)
+    try {
+      await onDelete(email)
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   return (
     <article
@@ -44,16 +68,63 @@ export default function MailList({
         }
       }}
     >
-      <div className="mb-3 flex items-center justify-between">
+      {/* Header */}
+      <div className="mb-3 flex items-center justify-between gap-2 flex-wrap">
         <div>
           <h2 className="font-mono text-sm text-foreground">
             {activeView === "vault" ? "secret-inbox" : "public-inbox"} / {activeNamespace}
           </h2>
           <p className="text-xs text-muted-foreground">tag: {activeTag}</p>
         </div>
-        <span className="count-badge rounded-full border border-border/50 bg-background/50 px-2.5 py-0.5 text-xs text-muted-foreground">
-          {emails.length} mails
-        </span>
+        <div className="flex items-center gap-2">
+          {/* Read/Unread filter */}
+          {!showLockedVaultMessage && !isLoading && emails.length > 0 && (
+            <div className="flex items-center gap-1 rounded-full border border-border/60 bg-background/40 p-0.5">
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setReadFilter("all") }}
+                title="Show all"
+                className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium transition-all duration-200 ${
+                  readFilter === "all"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Filter className="size-2.5" />
+                All
+              </button>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setReadFilter("unread") }}
+                title="Show unread"
+                className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium transition-all duration-200 ${
+                  readFilter === "unread"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <CircleDot className="size-2.5" />
+                Unread {unreadCount > 0 && <span className="ml-0.5 tabular-nums">({unreadCount})</span>}
+              </button>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setReadFilter("read") }}
+                title="Show read"
+                className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium transition-all duration-200 ${
+                  readFilter === "read"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Circle className="size-2.5" />
+                Read {readCount > 0 && <span className="ml-0.5 tabular-nums">({readCount})</span>}
+              </button>
+            </div>
+          )}
+          <span className="count-badge rounded-full border border-border/50 bg-background/50 px-2.5 py-0.5 text-xs text-muted-foreground">
+            {visibleEmails.length} mails
+          </span>
+        </div>
       </div>
 
       {showLockedVaultMessage ? (
@@ -70,13 +141,18 @@ export default function MailList({
         </div>
       ) : (
         <div className="space-y-2">
-          {emails.map((email, index) => {
+          {visibleEmails.map((email, index) => {
             const tagIsPrivate = privateTags.includes(email.tag)
+            const isUnread = !email.isRead
+            const isNew = !!email.isNew
+            const isDeleting = deletingId === email.id
 
             return (
               <div
                 key={email.id}
-                className={`email-row-enter group card-lift hover-shine rounded-xl border border-border/60 bg-background/40 p-3 ${
+                className={`email-row-enter group card-lift relative rounded-xl border p-3 transition-all duration-200 ${
+                  isDeleting ? "scale-95 opacity-50" : ""
+                } ${
                   email.sensitive && !vaultUnlocked
                     ? "blur-sm opacity-60 saturate-50 scale-[0.995]"
                     : "blur-0 opacity-100 saturate-100 scale-100"
@@ -84,21 +160,36 @@ export default function MailList({
                   isVaultView
                     ? "hover:border-destructive/40 hover:bg-destructive/5"
                     : "hover:border-primary/40 hover:bg-primary/5"
+                } ${
+                  isUnread
+                    ? "border-primary/50 bg-primary/8 dark:bg-primary/10 shadow-[0_0_0_1px_var(--tw-shadow-color)] shadow-primary/20"
+                    : "border-border/60 bg-background/30"
                 }`}
                 style={{ animationDelay: `${index * 0.04}s` }}
               >
+                {/* Unread accent stripe */}
+                {isUnread && (
+                  <div className={`absolute left-0 top-1/4 bottom-1/4 w-0.5 rounded-full ${isVaultView ? "bg-destructive" : "bg-primary"}`} />
+                )}
+
                 <div className="flex items-start gap-2">
                   {/* Main email content — clickable */}
                   <div
-                    className="min-w-0 flex-1 cursor-pointer"
+                    className="min-w-0 flex-1 cursor-pointer relative"
                     onClick={() => onOpen && onOpen(email)}
                     role="button"
                     tabIndex={0}
+                    onKeyDown={(e) => e.key === "Enter" && onOpen && onOpen(email)}
                   >
-                    <div className="mb-1 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Mail className={`size-3 ${isVaultView ? "text-destructive/60" : "text-primary/60"}`} />
-                        <span className={`font-mono text-xs ${isVaultView ? "text-destructive" : "text-primary"}`}>
+                    <div className="mb-1 flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {/* Read/Unread indicator dot */}
+                        {isUnread ? (
+                          <CircleDot className={`size-3 flex-shrink-0 ${isVaultView ? "text-destructive" : "text-primary"}`} />
+                        ) : (
+                          <Circle className="size-3 flex-shrink-0 text-muted-foreground/40" />
+                        )}
+                        <span className={`font-mono text-xs ${isVaultView ? "text-destructive" : "text-primary"} ${isUnread ? "font-semibold" : "font-normal opacity-80"}`}>
                           {email.tag}
                         </span>
                         {tagIsPrivate && (
@@ -107,63 +198,99 @@ export default function MailList({
                             vault
                           </span>
                         )}
+                        {/* "NEW" badge — shown for ~8s via CSS animation, then fades */}
+                        {isNew && (
+                          <span className="new-mail-badge inline-flex items-center gap-0.5 rounded-full border border-emerald-400/50 bg-emerald-400/15 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-500 dark:text-emerald-400">
+                            <Sparkles className="size-2" />
+                            new
+                          </span>
+                        )}
                       </div>
-                      <span className="text-xs text-muted-foreground">{email.receivedAt}</span>
+                      <span className={`flex-shrink-0 text-xs ${isUnread ? "text-foreground/70 font-medium" : "text-muted-foreground"}`}>
+                        {email.receivedAt}
+                      </span>
                     </div>
-                    <p className="text-sm text-foreground">{email.subject}</p>
+                    <p className={`text-sm ${isUnread ? "font-semibold text-foreground" : "font-normal text-foreground/70 dark:text-foreground/60"}`}>
+                      {email.subject}
+                    </p>
+                    {email.from && (
+                      <p className="mt-0.5 truncate text-[11px] text-muted-foreground/70">
+                        {email.from}
+                      </p>
+                    )}
                   </div>
 
-                  {/* Privacy toggle button */}
-                  {onMakePrivate && onMakePublic && !isVaultView && (
-                    <button
-                      type="button"
-                      title={tagIsPrivate ? `Make "${email.tag}" tag public` : `Move "${email.tag}" tag to vault`}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        if (tagIsPrivate) {
-                          onMakePublic(email.tag)
-                        } else {
-                          onMakePrivate(email.tag)
-                        }
-                      }}
-                      className={`mt-1 flex-shrink-0 rounded-lg border p-1.5 opacity-0 transition-all duration-300 group-hover:opacity-100 hover:scale-110 active:scale-90 ${
-                        tagIsPrivate
-                          ? "border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/20 hover:shadow-[0_0_10px_var(--glow-destructive)]"
-                          : "border-border/50 bg-background/50 text-muted-foreground hover:border-primary/40 hover:bg-primary/10 hover:text-primary hover:shadow-[0_0_10px_var(--glow-primary)]"
-                      }`}
-                    >
-                      {tagIsPrivate ? (
-                        <ShieldCheck className="size-3.5" />
-                      ) : (
-                        <ShieldOff className="size-3.5" />
-                      )}
-                    </button>
-                  )}
+                  {/* Action buttons column */}
+                  <div className="flex flex-col items-center gap-1.5 mt-0.5">
+                    {/* Delete email button */}
+                    {onDelete && (
+                      <button
+                        type="button"
+                        title="Delete email"
+                        disabled={isDeleting}
+                        onClick={(e) => handleDelete(e, email)}
+                        className="flex-shrink-0 rounded-lg border border-border/50 bg-background/50 p-1.5 text-muted-foreground opacity-0 transition-all duration-300 group-hover:opacity-100 hover:scale-110 hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive hover:shadow-[0_0_10px_var(--glow-destructive)] active:scale-90"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </button>
+                    )}
 
-                  {/* In vault view, show button to make public */}
-                  {onMakePublic && isVaultView && vaultUnlocked && tagIsPrivate && (
-                    <button
-                      type="button"
-                      title={`Make "${email.tag}" tag public`}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        onMakePublic(email.tag)
-                      }}
-                      className="mt-1 flex-shrink-0 rounded-lg border border-destructive/40 bg-destructive/10 p-1.5 text-destructive opacity-0 transition-all duration-300 group-hover:opacity-100 hover:scale-110 hover:bg-destructive/20 hover:shadow-[0_0_10px_var(--glow-destructive)] active:scale-90"
-                    >
-                      <ShieldOff className="size-3.5" />
-                    </button>
-                  )}
+                    {/* Privacy toggle button (public inbox only) */}
+                    {onMakePrivate && onMakePublic && !isVaultView && (
+                      <button
+                        type="button"
+                        title={tagIsPrivate ? `Make "${email.tag}" tag public` : `Move "${email.tag}" tag to vault`}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          if (tagIsPrivate) {
+                            onMakePublic(email.tag)
+                          } else {
+                            onMakePrivate(email.tag)
+                          }
+                        }}
+                        className={`flex-shrink-0 rounded-lg border p-1.5 opacity-0 transition-all duration-300 group-hover:opacity-100 hover:scale-110 active:scale-90 ${
+                          tagIsPrivate
+                            ? "border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/20 hover:shadow-[0_0_10px_var(--glow-destructive)]"
+                            : "border-border/50 bg-background/50 text-muted-foreground hover:border-primary/40 hover:bg-primary/10 hover:text-primary hover:shadow-[0_0_10px_var(--glow-primary)]"
+                        }`}
+                      >
+                        {tagIsPrivate ? (
+                          <ShieldCheck className="size-3.5" />
+                        ) : (
+                          <ShieldOff className="size-3.5" />
+                        )}
+                      </button>
+                    )}
+
+                    {/* In vault view, show button to make public */}
+                    {onMakePublic && isVaultView && vaultUnlocked && tagIsPrivate && (
+                      <button
+                        type="button"
+                        title={`Make "${email.tag}" tag public`}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onMakePublic(email.tag)
+                        }}
+                        className="flex-shrink-0 rounded-lg border border-destructive/40 bg-destructive/10 p-1.5 text-destructive opacity-0 transition-all duration-300 group-hover:opacity-100 hover:scale-110 hover:bg-destructive/20 hover:shadow-[0_0_10px_var(--glow-destructive)] active:scale-90"
+                      >
+                        <ShieldOff className="size-3.5" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             )
           })}
 
-          {!emails.length && (
+          {!visibleEmails.length && (
             <div className="flex min-h-36 flex-col items-center justify-center rounded-xl border border-dashed border-border p-4 text-center scale-in">
               <Mail className="mb-2 size-6 text-muted-foreground/50" />
               <p className="text-sm text-muted-foreground">
-                {isVaultView ? "No private emails in the vault." : "No emails matched this view."}
+                {isVaultView
+                  ? "No private emails in the vault."
+                  : readFilter !== "all"
+                  ? `No ${readFilter} emails matched this view.`
+                  : "No emails matched this view."}
               </p>
             </div>
           )}
