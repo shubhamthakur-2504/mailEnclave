@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { Globe2, CheckCircle2 } from "lucide-react"
+import { Globe2, CheckCircle2, Trash2, AlertTriangle, Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 type NamespacesViewProps = {
@@ -11,6 +11,8 @@ type NamespacesViewProps = {
   onSelectNamespace: (namespace: string) => void
   onOpenAddDialog: () => void
   onUpdateNamespace?: (id: string, namespace: string, apiKey: string) => Promise<void>
+  onDeleteNamespace?: (id: string, password: string) => Promise<void>
+  configs?: Array<{ id: string; namespace: string }>
 }
 
 export default function NamespacesView({
@@ -20,15 +22,53 @@ export default function NamespacesView({
   onSelectNamespace,
   onOpenAddDialog,
   onUpdateNamespace,
+  onDeleteNamespace,
+  configs = [],
 }: NamespacesViewProps) {
   const [editNamespace, setEditNamespace] = React.useState(activeNamespace)
   const [editApiKey, setEditApiKey] = React.useState("")
   const [isUpdating, setIsUpdating] = React.useState(false)
 
+  // Delete namespace state
+  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false)
+  const [deletePassword, setDeletePassword] = React.useState("")
+  const [showDeletePassword, setShowDeletePassword] = React.useState(false)
+  const [deleteError, setDeleteError] = React.useState("")
+  const [isDeleting, setIsDeleting] = React.useState(false)
+
   React.useEffect(() => {
     setEditNamespace(activeNamespace)
     setEditApiKey("")
+    // Reset delete state when switching namespaces
+    setShowDeleteConfirm(false)
+    setDeletePassword("")
+    setDeleteError("")
   }, [activeNamespace])
+
+  const handleDeleteNamespace = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!deletePassword.trim()) {
+      setDeleteError("Account password is required")
+      return
+    }
+    if (!activeConfigId || !onDeleteNamespace) return
+
+    setIsDeleting(true)
+    setDeleteError("")
+    try {
+      await onDeleteNamespace(activeConfigId, deletePassword)
+      setShowDeleteConfirm(false)
+      setDeletePassword("")
+    } catch (err: any) {
+      setDeleteError(err?.response?.data?.error || "Incorrect password. Deletion cancelled.")
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const getConfigIdForNamespace = (ns: string) =>
+    configs.find((c) => c.namespace === ns)?.id
+
   return (
     <div className="grid gap-4 md:grid-cols-[280px_1fr]">
       <aside className="card-lift rounded-2xl border border-border bg-card p-5 backdrop-blur-md transition-all duration-300 hover:border-primary/30 slide-in-left">
@@ -84,8 +124,10 @@ export default function NamespacesView({
             active: {activeNamespace}
           </span>
         </div>
+
         {activeConfigId ? (
-          <div className="mt-6 scale-in">
+          <div className="mt-6 scale-in space-y-6">
+            {/* Edit form */}
             <form
               onSubmit={async (e) => {
                 e.preventDefault()
@@ -132,6 +174,76 @@ export default function NamespacesView({
                 </Button>
               </div>
             </form>
+
+            {/* Danger Zone — Delete Namespace */}
+            {onDeleteNamespace && (
+              <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4">
+                <div className="mb-3 flex items-center gap-2">
+                  <AlertTriangle className="size-4 text-destructive" />
+                  <h3 className="text-sm font-semibold text-destructive">Danger Zone</h3>
+                </div>
+                <p className="mb-3 text-xs text-muted-foreground">
+                  Permanently delete the namespace <span className="font-mono font-medium text-foreground">{activeNamespace}</span>. This will delete
+                  <span className="font-medium text-destructive"> all tags, emails, and private vault data</span> associated with it. This action
+                  cannot be undone.
+                </p>
+
+                {!showDeleteConfirm ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-1.5 text-xs font-medium text-destructive transition-all duration-200 hover:bg-destructive/20 hover:shadow-[0_0_12px_var(--glow-destructive)] active:scale-[0.97]"
+                  >
+                    <Trash2 className="size-3.5" />
+                    Delete Namespace
+                  </button>
+                ) : (
+                  <form onSubmit={handleDeleteNamespace} className="space-y-3">
+                    <p className="text-xs font-medium text-foreground">
+                      Enter your account password to confirm deletion:
+                    </p>
+                    <div className="relative">
+                      <input
+                        type={showDeletePassword ? "text" : "password"}
+                        placeholder="Account password"
+                        value={deletePassword}
+                        onChange={(e) => { setDeletePassword(e.target.value); setDeleteError("") }}
+                        className="w-full rounded-xl border border-destructive/40 bg-background/50 px-3 py-2 pr-9 text-sm text-foreground outline-none transition-all focus:border-destructive/60 focus:ring-1 focus:ring-destructive/40"
+                        autoFocus
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowDeletePassword((v) => !v)}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        tabIndex={-1}
+                      >
+                        {showDeletePassword ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+                      </button>
+                    </div>
+                    {deleteError && (
+                      <p className="text-xs text-destructive">{deleteError}</p>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => { setShowDeleteConfirm(false); setDeletePassword(""); setDeleteError("") }}
+                        className="rounded-lg border border-border bg-background/50 px-3 py-1.5 text-xs text-muted-foreground transition-all hover:text-foreground"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isDeleting || !deletePassword.trim()}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/60 bg-destructive/20 px-3 py-1.5 text-xs font-medium text-destructive transition-all duration-200 hover:bg-destructive/30 disabled:opacity-50"
+                      >
+                        <Trash2 className="size-3.5" />
+                        {isDeleting ? "Deleting..." : "Confirm Delete"}
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            )}
           </div>
         ) : (
           <div className="mt-6 flex min-h-52 flex-col items-center justify-center rounded-xl border border-dashed border-primary/30 bg-primary/5 p-6 text-center scale-in">
