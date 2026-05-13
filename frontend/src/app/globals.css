@@ -727,3 +727,34 @@
   0%, 70%, 100% { left: -100%; }
   85% { left: 100%; }
 }
+
+/* ─────────────────────────── "New mail" badge ─────────────────────────── */
+
+.new-mail-badge {
+  animation: newMailPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both,
+             newMailFade 0.6s ease-out 7s forwards;
+}
+
+@keyframes newMailPop {
+  from { transform: scale(0.5); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+@keyframes newMailFade {
+  from { opacity: 1; max-width: 60px; }
+  to   { opacity: 0; max-width: 0;    overflow: hidden; padding: 0; margin: 0; border: none; }
+}
+
+/* ──────────────────────── Unread email row glow ──────────────────────── */
+
+/* Light mode: crisp blue-tint left bar + slightly elevated background */
+:root .unread-row {
+  background: rgba(74, 88, 224, 0.07);
+  border-color: rgba(74, 88, 224, 0.35);
+}
+
+/* Dark mode: same idea, dimmer */
+.dark .unread-row {
+  background: rgba(124, 135, 247, 0.10);
+  border-color: rgba(124, 135, 247, 0.30);
+}

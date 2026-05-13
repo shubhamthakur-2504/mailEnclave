@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { useRef, useEffect } from "react"
 import { ChevronDown, Command, Lock, Search, Unlock } from "lucide-react"
 
 type TopBarProps = {
@@ -34,9 +34,24 @@ export default function TopBar({
   disableMenu,
   hidden = false,
 }: TopBarProps) {
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (namespaceMenuOpen && menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        onToggleNamespaceMenu()
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [namespaceMenuOpen, onToggleNamespaceMenu])
+
   return (
     <div
-      className={`grid transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
+      className={`relative z-50 grid transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
         hidden
           ? "mb-0 -translate-y-6 grid-rows-[0fr] opacity-0 pointer-events-none"
           : "mb-5 translate-y-0 grid-rows-[1fr] opacity-100"
@@ -46,7 +61,7 @@ export default function TopBar({
       <div className="min-h-0">
         <div className="grid gap-3 md:grid-cols-[1fr_1.2fr_1fr] pb-1">
           {/* Namespace selector */}
-          <div className="relative fade-in-up fade-in-up-delay-1">
+          <div className="relative fade-in-up fade-in-up-delay-1" ref={menuRef}>
             <button
               type="button"
               onClick={() => {
@@ -67,7 +82,7 @@ export default function TopBar({
             </button>
 
             {namespaceMenuOpen && !disableMenu ? (
-              <div className="absolute left-0 top-[calc(100%+0.6rem)] z-20 w-full rounded-2xl border border-border bg-popover p-3 shadow-[0_18px_60px_rgba(3,7,18,0.5)] backdrop-blur-2xl scale-in">
+              <div className="absolute left-0 top-[calc(100%+0.6rem)] z-20 w-full rounded-2xl border border-border bg-background/95 p-3 shadow-[0_18px_60px_rgba(3,7,18,0.5)] backdrop-blur-3xl scale-in">
                 <p className="mb-2 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Namespaces</p>
                 <div className="max-h-44 space-y-2 overflow-auto pr-1">
                   {namespaces.map((item, i) => (
