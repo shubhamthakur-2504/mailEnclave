@@ -70,7 +70,7 @@ export default function NamespacesView({
     configs.find((c) => c.namespace === ns)?.id
 
   return (
-    <div className="grid gap-4 md:grid-cols-[280px_1fr]">
+    <div className="grid gap-4 grid-cols-1 md:grid-cols-[280px_1fr]">
       <aside className="card-lift rounded-2xl border border-border bg-card p-5 backdrop-blur-md transition-all duration-300 hover:border-primary/30 slide-in-left">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-1.5">
@@ -94,9 +94,9 @@ export default function NamespacesView({
               }`}
               style={{ animationDelay: `${index * 0.05}s` }}
             >
-              <span className="font-mono">{item}</span>
+              <span className="font-mono truncate mr-2">{item}</span>
               {activeNamespace === item ? (
-                <span className="inline-flex items-center gap-1 rounded-full border border-primary/40 px-2 py-0.5 text-[10px] text-primary badge-bounce">
+                <span className="flex-shrink-0 inline-flex items-center gap-1 rounded-full border border-primary/40 px-2 py-0.5 text-[10px] text-primary badge-bounce">
                   <CheckCircle2 className="size-2.5" />
                   active
                 </span>
@@ -115,12 +115,12 @@ export default function NamespacesView({
       </aside>
 
       <article className="card-lift rounded-2xl border border-border bg-card p-6 backdrop-blur-md transition-all duration-300 hover:border-primary/30 slide-in-right">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
             <h2 className="font-mono text-sm text-foreground">namespace manager</h2>
             <p className="text-xs text-muted-foreground">Switch or add environments without leaving this screen.</p>
           </div>
-          <span className="count-badge rounded-full border border-border/50 bg-background/50 px-2.5 py-0.5 text-xs text-muted-foreground">
+          <span className="count-badge rounded-full border border-border/50 bg-background/50 px-2.5 py-0.5 text-xs text-muted-foreground truncate max-w-[180px]">
             active: {activeNamespace}
           </span>
         </div>

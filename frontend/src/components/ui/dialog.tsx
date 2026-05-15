@@ -8,7 +8,7 @@ const Dialog = DialogPrimitive.Root
 const DialogTrigger = DialogPrimitive.Trigger
 const DialogPortal = ({ children, className }: any) => (
   <DialogPrimitive.Portal>
-    <div className={cn("fixed inset-0 z-50 flex items-start justify-center sm:items-center", className)}>{children}</div>
+    <div className={cn("fixed inset-0 z-50 flex items-center justify-center", className)}>{children}</div>
   </DialogPrimitive.Portal>
 )
 

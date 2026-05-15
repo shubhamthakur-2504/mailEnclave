@@ -758,3 +758,41 @@
   background: rgba(124, 135, 247, 0.10);
   border-color: rgba(124, 135, 247, 0.30);
 }
+/* ----------------------------- Thin scrollbar utility ----------------------------- */
+
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  height: 3px;
+  width: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
+}
+
+/* ───────────────── Inbox grid responsive columns ───────────────── */
+
+.inbox-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+  transition: grid-template-columns 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (min-width: 768px) {
+  .inbox-grid[data-cols="expanded"] {
+    grid-template-columns: 300px 1fr;
+  }
+  .inbox-grid[data-cols="collapsed"] {
+    grid-template-columns: 200px 1fr;
+  }
+}
