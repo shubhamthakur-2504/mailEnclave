@@ -81,7 +81,7 @@ const limitations = [
   {
     icon: <Lock className="size-5" />,
     title: "We only provide UI + persistent storage",
-    body: "MailEnclave is not an email provider. We do not host any mail server. All email delivery is handled by Testmail.app — your namespace, your API key, their infrastructure. Our role is to fetch, encrypt, store, and display those emails securely.",
+    body: "MailEnclave is not an email provider. We do not host any mail server. All email delivery is handled by Testmail.app — your namespace, your API key, their infrastructure. Our role is to fetch, encrypt the full body content with AES-256, store, and display those emails securely.",
     severity: "info",
   },
   {
@@ -116,7 +116,7 @@ const tips = [
   {
     icon: <Shield className="size-5" />,
     title: "Vault high-sensitivity tags",
-    body: "Tags that receive recovery codes, 2FA seeds, or financial alerts should live in the vault. Set your vault PIN on first use — it adds a second layer of protection even if your account is compromised.",
+    body: "Tags that receive recovery codes, 2FA seeds, or financial alerts should live in the vault. Set your vault PIN on first use — it adds a second layer of protection even if your account is compromised. Email bodies are already encrypted at rest; the vault PIN adds access-control on top.",
   },
   {
     icon: <BookOpen className="size-5" />,
@@ -141,7 +141,7 @@ const severityIcon: Record<string, React.ReactNode> = {
 
 export default function AboutPage() {
   return (
-    <div className="noise-overlay relative flex-1 overflow-hidden">
+    <div className="noise-overlay relative min-h-screen">
       <div className="frost-scene" aria-hidden>
         <div className="frost-orb frost-orb-1" />
         <div className="frost-orb frost-orb-2" />

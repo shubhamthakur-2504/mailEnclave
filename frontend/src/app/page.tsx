@@ -32,8 +32,13 @@ import {
 const features = [
   {
     title: "AES-256 Encrypted Storage",
-    body: "Your Testmail.app API keys and sensitive email payloads are encrypted at rest with AES-256. Nothing is stored in plain text — ever.",
+    body: "Your Testmail.app API keys, email subjects, and full message bodies (HTML + plain text) are encrypted at rest with AES-256-CBC. Nothing readable is ever written to disk in plain text.",
     icon: <Lock className="size-5" />,
+  },
+  {
+    title: "End-to-End Body Privacy",
+    body: "Email body content is encrypted before being saved to the database and decrypted only on-demand when you open a message — so even a database breach exposes no readable content.",
+    icon: <ShieldCheck className="size-5" />,
   },
   {
     title: "Private Tag Vaulting",
