@@ -18,6 +18,9 @@ type MailListProps = {
   privateTags?: string[]
   onMakePrivate?: (tag: string) => void
   onMakePublic?: (tag: string) => void
+  hasMore?: boolean
+  isLoadingMore?: boolean
+  onLoadMore?: () => void
 }
 
 export default function MailList({
@@ -34,6 +37,9 @@ export default function MailList({
   privateTags = [],
   onMakePrivate,
   onMakePublic,
+  hasMore = false,
+  isLoadingMore = false,
+  onLoadMore,
 }: MailListProps) {
   const showLockedVaultMessage = activeView === "vault" && !vaultUnlocked
   const [readFilter, setReadFilter] = useState<ReadFilter>("all")
@@ -61,7 +67,7 @@ export default function MailList({
 
   return (
     <article
-      className="card-lift rounded-2xl border border-border bg-card p-4 backdrop-blur-md transition-all duration-300 hover:border-primary/30 slide-in-right"
+      className="card-lift min-w-0 w-full rounded-2xl border border-border bg-card p-4 backdrop-blur-md transition-all duration-300 hover:border-primary/30 slide-in-right"
       onClick={() => {
         if (isVaultView && !vaultUnlocked) {
           onRequirePasskey()
@@ -70,8 +76,8 @@ export default function MailList({
     >
       {/* Header */}
       <div className="mb-3 flex items-center justify-between gap-2 flex-wrap">
-        <div>
-          <h2 className="font-mono text-sm text-foreground">
+        <div className="min-w-0">
+          <h2 className="font-mono text-sm text-foreground truncate">
             {activeView === "vault" ? "secret-inbox" : "public-inbox"} / {activeNamespace}
           </h2>
           <p className="text-xs text-muted-foreground">tag: {activeTag}</p>
@@ -292,6 +298,24 @@ export default function MailList({
                   ? `No ${readFilter} emails matched this view.`
                   : "No emails matched this view."}
               </p>
+            </div>
+          )}
+
+          {/* Load more */}
+          {hasMore && visibleEmails.length > 0 && (
+            <div className="flex justify-center pt-2">
+              <button
+                type="button"
+                onClick={onLoadMore}
+                disabled={isLoadingMore}
+                className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/50 px-5 py-2 text-xs font-medium text-muted-foreground transition-all duration-300 hover:border-primary/40 hover:bg-primary/5 hover:text-primary hover:shadow-[0_0_14px_var(--glow-primary)] disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.97]"
+              >
+                {isLoadingMore ? (
+                  <><span className="spinner size-3" />Loading...</>
+                ) : (
+                  "Load more emails"
+                )}
+              </button>
             </div>
           )}
         </div>

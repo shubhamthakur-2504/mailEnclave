@@ -26,8 +26,6 @@ export type TestmailEmail = {
   tag?: string
   subject?: string
   timestamp?: number
-  text?: string
-  html?: string
   from?: string
   isPrivate?: boolean
   isRead?: boolean
@@ -36,9 +34,11 @@ export type TestmailEmail = {
 export type TestmailInboxResponse = {
   result: string
   message: string | null
+  total: number
+  page: number
+  pageSize: number
+  totalPages: number
   count: number
-  limit: number
-  offset: number
   emails: TestmailEmail[]
   config: {
     id: string
@@ -84,15 +84,8 @@ export const getDashboardStatsRequest = async () => {
 export const getConfigEmailsRequest = async (
   id: string,
   params?: {
-    tag?: string
-    tag_prefix?: string
-    timestamp_from?: number
-    timestamp_to?: number
-    limit?: number
-    offset?: number
-    livequery?: boolean
-    headers?: boolean
-    spam_report?: boolean
+    page?: number
+    pageSize?: number
   }
 ) => {
   const { data } = await protectedApi.get<TestmailInboxResponse>(`/config/${id}/emails`, { params })
