@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { decrypt } from '../lib/crypto.js';
+import { sanitizeError } from '../lib/sanitizeError.js';
 import { getConfigsForSync, markConfigSynced, touchConfigAccess } from '../repositories/config.repository.js';
 import { upsertEmail } from '../repositories/email.repository.js';
 import { fetchTestmailInbox, type TestmailJsonEmail } from './testmail.service.js';
@@ -131,7 +132,7 @@ const syncConfig = async (config: SyncConfig, livequery: boolean) => {
       });
     } catch (err) {
       // publishing failure should not stop sync
-      console.error('[testmail-sync] sse publish error', err);
+      console.error('[testmail-sync] sse publish error', sanitizeError(err));
     }
   }
 
@@ -160,7 +161,7 @@ const runPriorityLoop = async () => {
       backoffMs = ACTIVE_RETRY_DELAY_MS;
       await syncConfig(activeConfig, true);
     } catch (error) {
-      console.error('[testmail-sync] priority loop error', error);
+      console.error('[testmail-sync] priority loop error', sanitizeError(error));
       backoffMs = Math.min(backoffMs * 2, 30000);
       await sleep(backoffMs);
     }
@@ -182,7 +183,7 @@ const runPollLoop = async () => {
         await syncConfig(config, false);
       }
     } catch (error) {
-      console.error('[testmail-sync] poll loop error', error);
+      console.error('[testmail-sync] poll loop error', sanitizeError(error));
     }
   }
 };
