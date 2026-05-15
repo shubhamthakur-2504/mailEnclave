@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react"
 import { ArrowLeft, Clock, User } from "lucide-react"
 import type { EmailItem } from "./types"
+import { sanitizeEmailHtml } from "@/lib/sanitize-html"
 
 type Props = {
   email?: any
@@ -70,13 +71,7 @@ export default function MailDetail({ email, onClose }: Props) {
           sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin"
           className="w-full border-0 bg-white"
           style={{ minWidth: '100%', minHeight: '300px', height: 'calc(100dvh - 180px)' }}
-          srcDoc={
-            email.htmlBody
-              ? (email.htmlBody.includes('<head>')
-                  ? email.htmlBody.replace('<head>', '<head><meta name="viewport" content="width=device-width, initial-scale=1.0">')
-                  : `<head><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>${email.htmlBody}`)
-              : `<pre style="font-family: system-ui, sans-serif; padding: 1rem; margin: 0; white-space: pre-wrap;">${email.text ?? '<i>(no body)</i>'}</pre>`
-          }
+          srcDoc={sanitizeEmailHtml(email.htmlBody, email.text)}
           title="Email content"
         />
       </div>
