@@ -58,6 +58,9 @@ export default function DashboardPage() {
   const [openEmail, setOpenEmail] = useState<any | null>(null)
   const [privateTags, setPrivateTags] = useState<string[]>([])
   const [isSubmittingPasskey, setIsSubmittingPasskey] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
   const isVaultView = activeView === 'vault'
   const hasVaultPin = user?.hasVaultPin ?? false
   const namespaces = useMemo(() => configs.map((config) => config.namespace), [configs])
@@ -121,10 +124,12 @@ export default function DashboardPage() {
     let isMounted = true
     let eventSource: EventSource | null = null
 
-    const loadEmails = async () => {
+    const loadEmails = async (page = 1, append = false) => {
       try {
-        setIsEmailsLoading(true)
-        const inbox = await getConfigEmailsRequest(activeConfig.id, { limit: 100 })
+        if (page === 1) setIsEmailsLoading(true)
+        else setIsLoadingMore(true)
+
+        const inbox = await getConfigEmailsRequest(activeConfig.id, { page, pageSize: 30 })
         if (!isMounted) return
 
         const mappedEmails: EmailItem[] = inbox.emails.map((email, index) => ({
@@ -134,18 +139,19 @@ export default function DashboardPage() {
           namespace: activeConfig.namespace,
           receivedAt: email.timestamp ? new Date(email.timestamp).toLocaleString() : 'just now',
           from: email.from ?? null,
-          text: email.text ?? null,
           isPrivate: !!email.isPrivate,
           sensitive: false,
-          isRead: !!(email as any).isRead,
+          isRead: !!email.isRead,
           isNew: false,
         }))
 
-        setEmails(mappedEmails)
+        setTotalPages(inbox.totalPages ?? 1)
+        setCurrentPage(page)
+        setEmails((prev) => append ? [...prev, ...mappedEmails] : mappedEmails)
       } catch {
-        if (isMounted) setEmails([])
+        if (isMounted && !append) setEmails([])
       } finally {
-        if (isMounted) setIsEmailsLoading(false)
+        if (isMounted) { setIsEmailsLoading(false); setIsLoadingMore(false) }
       }
     }
 
@@ -178,7 +184,7 @@ export default function DashboardPage() {
       eventSource = es
     }
 
-    void loadEmails()
+    void loadEmails(1, false)
     connectStream()
 
     return () => {
@@ -186,6 +192,40 @@ export default function DashboardPage() {
       eventSource?.close()
     }
   }, [activeConfig, accessToken])
+
+  // Reset page counter when switching namespace
+  useEffect(() => {
+    setCurrentPage(1)
+    setTotalPages(1)
+  }, [activeConfig])
+
+  const handleLoadMore = useCallback(async () => {
+    if (!activeConfig || isLoadingMore || currentPage >= totalPages) return
+    const nextPage = currentPage + 1
+    try {
+      setIsLoadingMore(true)
+      const inbox = await getConfigEmailsRequest(activeConfig.id, { page: nextPage, pageSize: 30 })
+      const mappedEmails: EmailItem[] = inbox.emails.map((email, index) => ({
+        id: email.id ?? `${activeConfig.namespace}-${email.tag ?? 'mail'}-${email.timestamp ?? index}`,
+        tag: email.tag ?? 'untagged',
+        subject: email.subject ?? '(no subject)',
+        namespace: activeConfig.namespace,
+        receivedAt: email.timestamp ? new Date(email.timestamp).toLocaleString() : 'just now',
+        from: email.from ?? null,
+        isPrivate: !!email.isPrivate,
+        sensitive: false,
+        isRead: !!email.isRead,
+        isNew: false,
+      }))
+      setTotalPages(inbox.totalPages ?? 1)
+      setCurrentPage(nextPage)
+      setEmails((prev) => [...prev, ...mappedEmails])
+    } catch {
+      toast.error('Failed to load more emails')
+    } finally {
+      setIsLoadingMore(false)
+    }
+  }, [activeConfig, currentPage, totalPages, isLoadingMore])
 
   useEffect(() => {
     if (activeView === 'namespaces') setNamespaceMenuOpen(false)
@@ -361,7 +401,7 @@ export default function DashboardPage() {
   }, [activeConfig, activeNamespace])
 
   return (
-    <main className={`noise-overlay relative min-h-screen overflow-hidden px-4 pt-6 md:px-8 transition-all duration-500 ${openEmail ? 'pb-6' : 'pb-32'}`}>
+    <main className={`noise-overlay relative min-h-screen px-4 pt-6 md:px-8 transition-all duration-500 ${openEmail ? 'pb-6' : 'pb-32'}`}>
       <div className="pointer-events-none fixed inset-0 -z-20 overflow-hidden">
         <div
           className={`absolute -left-1/4 -top-1/3 h-[34rem] w-[34rem] rounded-full blur-3xl transition-all duration-700 ${isVaultView ? 'bg-rose-500/20' : 'bg-blue-500/20'}`}
@@ -449,14 +489,11 @@ export default function DashboardPage() {
             />
           </div>
         ) : (
-          /* ── Inbox grid: wide tags column → shrinks when mail opens ── */
+          /* ── Inbox grid: tags sidebar + mail list ── */
           <div
             key={`inbox-${activeView}`}
-            className="view-transition grid gap-4"
-            style={{
-              gridTemplateColumns: openEmail ? '200px 1fr' : '300px 1fr',
-              transition: 'grid-template-columns 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-            }}
+            className="view-transition inbox-grid"
+            data-cols={openEmail ? 'collapsed' : 'expanded'}
           >
             {isVaultView && !vaultUnlocked ? (
               <aside className="card-lift rounded-2xl border border-border bg-card p-4 backdrop-blur-md transition-all duration-300 hover:border-primary/30 slide-in-left">
@@ -481,7 +518,7 @@ export default function DashboardPage() {
               />
             )}
             {openEmail ? (
-              <div className="order-2">
+              <div className="order-2 min-w-0 w-full">
                 <MailDetail email={openEmail} onClose={() => { setOpenEmailId(null); setOpenEmail(null) }} />
               </div>
             ) : (
@@ -512,6 +549,9 @@ export default function DashboardPage() {
                 privateTags={privateTags}
                 onMakePrivate={handleMakePrivate}
                 onMakePublic={handleMakePublic}
+                hasMore={currentPage < totalPages}
+                isLoadingMore={isLoadingMore}
+                onLoadMore={handleLoadMore}
               />
             )}
           </div>
