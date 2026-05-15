@@ -118,15 +118,21 @@ export const getConfigEmails = async (req: Request, res: Response, next: NextFun
     }
 
     await touchTestmailNamespace(id, userId);
-    const emails = await listEmailsByConfigId(id);
+
+    const page = parseInt(String(req.query.page ?? '1'), 10) || 1;
+    const pageSize = parseInt(String(req.query.pageSize ?? '30'), 10) || 30;
+
+    const { emails, total, totalPages } = await listEmailsByConfigId(id, { page, pageSize });
 
     return res.status(200).json({
       config: configResult.body.config,
       result: 'success',
       message: null,
+      total,
+      page,
+      pageSize,
+      totalPages,
       count: emails.length,
-      limit: emails.length,
-      offset: 0,
       emails: emails.map((email) => ({
         id: email.id,
         testmailId: email.testmailId,
@@ -135,8 +141,7 @@ export const getConfigEmails = async (req: Request, res: Response, next: NextFun
         from: email.from,
         timestamp: email.receivedAt.getTime(),
         receivedAt: email.receivedAt,
-        html: email.htmlBody,
-        text: email.textBody,
+        // Body intentionally omitted from list — fetched per-email on demand
         isPrivate: email.isPrivate,
         isRead: email.isRead,
       })),
