@@ -5,8 +5,49 @@ import { JWT_SECRET } from '../constants/index.js';
 import { createUser, findUserByEmail, findUserById, updateUserVaultPinHash, updateUserPasswordHash } from '../repositories/user.repository.js';
 import { hashIp } from '../lib/ipHash.js';
 import { createRefreshToken, findRefreshTokenById, markTokenReplaced, revokeAllRefreshTokensForUser } from '../repositories/refresh.repository.js';
+import { sendOtpEmail, sendRegistrationEmail } from './email.service.js';
 
 const SALT_ROUNDS = 10;
+
+const otpCache = new Map<string, { otp: string; expiresAt: number }>();
+
+export const generateSignupOtp = async (email: string) => {
+  const existingUser = await findUserByEmail(email);
+
+  if (existingUser) {
+    return {
+      status: 409,
+      body: { error: 'Email already registered' },
+    };
+  }
+
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiresAt = Date.now() + 10 * 60 * 1000; // 10 mins
+
+  otpCache.set(email, { otp, expiresAt });
+
+  // Automatically clear the OTP from memory after 10 minutes
+  setTimeout(() => {
+    const cached = otpCache.get(email);
+    if (cached && cached.expiresAt === expiresAt) {
+      otpCache.delete(email);
+    }
+  }, 10 * 60 * 1000);
+
+  try {
+    await sendOtpEmail(email, otp);
+  } catch (err) {
+    return {
+      status: 500,
+      body: { error: 'Failed to send OTP email' },
+    };
+  }
+
+  return {
+    status: 200,
+    body: { message: 'OTP sent successfully' },
+  };
+};
 
 const buildAuthSession = (user: { id: string; email: string }) => {
   const token = jwt.sign({ email: user.email }, JWT_SECRET, {
@@ -24,9 +65,25 @@ const buildAuthSession = (user: { id: string; email: string }) => {
 };
 
 export const signupUser = async (
-  input: { email: string; password: string },
+  input: { email: string; password: string; otp: string },
   meta?: { ip?: string | null; userAgent?: string | null }
 ) => {
+  const cached = otpCache.get(input.email);
+  if (!cached || cached.expiresAt < Date.now()) {
+    return {
+      status: 400,
+      body: { error: 'OTP expired or not requested' },
+    };
+  }
+
+  if (cached.otp !== input.otp) {
+    return {
+      status: 400,
+      body: { error: 'Invalid OTP' },
+    };
+  }
+
+  otpCache.delete(input.email);
   const existingUser = await findUserByEmail(input.email);
 
   if (existingUser) {
@@ -40,6 +97,11 @@ export const signupUser = async (
   const user = await createUser({
     email: input.email,
     passwordHash,
+  });
+
+  // Send the welcome email (non-blocking)
+  sendRegistrationEmail(user.email, user.email).catch(err => {
+    console.error('Failed to send welcome email:', err);
   });
 
   // create refresh token and persist, but do not return it in the response

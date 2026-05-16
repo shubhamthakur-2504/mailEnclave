@@ -1,10 +1,26 @@
 import { NextFunction, Request, Response } from 'express';
-import { loginUser, setupVaultPin, verifyVaultPin, changeUserPassword, resetVaultPin, signupUser, issueRefreshTokenForUser } from '../services/auth.service.js';
+import { loginUser, setupVaultPin, verifyVaultPin, changeUserPassword, resetVaultPin, signupUser, issueRefreshTokenForUser, generateSignupOtp } from '../services/auth.service.js';
 import { revokeAllRefreshTokensForUser, findRefreshTokenById } from '../repositories/refresh.repository.js';
 import { findUserById } from '../repositories/user.repository.js';
-import { signupSchema, loginSchema, setupVaultSchema, changePasswordSchema, resetVaultPinSchema } from '../validators/auth.validator.js';
+import { signupSchema, signupOtpSchema, loginSchema, setupVaultSchema, changePasswordSchema, resetVaultPinSchema } from '../validators/auth.validator.js';
 import { IS_PROD } from '../constants/index.js';
 import { formatZodErrors } from '../validators/formatErrors.js';
+
+export const requestSignupOtp = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const validation = signupOtpSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: formatZodErrors(validation.error) });
+    }
+
+    const { email } = validation.data;
+    const result = await generateSignupOtp(email);
+    
+    return res.status(result.status).json(result.body);
+  } catch (error) {
+    next(error);
+  }
+};
 
 export const signup = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -13,10 +29,10 @@ export const signup = async (req: Request, res: Response, next: NextFunction) =>
       return res.status(400).json({ error: formatZodErrors(validation.error) });
     }
 
-    const { email, password } = validation.data;
+    const { email, password, otp } = validation.data as any;
     const ip = req.ip || (req.headers['x-forwarded-for'] as string | undefined) || null;
     const userAgent = (req.get('user-agent') as string) || null;
-    const result = await signupUser({ email, password }, { ip, userAgent });
+    const result = await signupUser({ email, password, otp }, { ip, userAgent });
     // On success, issue server-side refresh cookie and return session body
     if (result && result.status >= 200 && result.status < 300 && result.body && (result.body as any).user && (result.body as any).user.id) {
       const userId = (result.body as any).user.id as string;
