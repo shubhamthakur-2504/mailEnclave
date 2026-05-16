@@ -1,8 +1,8 @@
 import { NextFunction, Request, Response } from 'express';
-import { loginUser, setupVaultPin, verifyVaultPin, changeUserPassword, resetVaultPin, signupUser, issueRefreshTokenForUser, generateSignupOtp } from '../services/auth.service.js';
+import { loginUser, setupVaultPin, verifyVaultPin, changeUserPassword, resetVaultPin, signupUser, issueRefreshTokenForUser, generateSignupOtp, generatePasswordResetOtp, resetPasswordWithOtp as resetPasswordService } from '../services/auth.service.js';
 import { revokeAllRefreshTokensForUser, findRefreshTokenById } from '../repositories/refresh.repository.js';
 import { findUserById } from '../repositories/user.repository.js';
-import { signupSchema, signupOtpSchema, loginSchema, setupVaultSchema, changePasswordSchema, resetVaultPinSchema } from '../validators/auth.validator.js';
+import { signupSchema, signupOtpSchema, loginSchema, setupVaultSchema, changePasswordSchema, resetVaultPinSchema, requestPasswordResetOtpSchema, resetPasswordWithOtpSchema } from '../validators/auth.validator.js';
 import { IS_PROD } from '../constants/index.js';
 import { formatZodErrors } from '../validators/formatErrors.js';
 
@@ -15,6 +15,38 @@ export const requestSignupOtp = async (req: Request, res: Response, next: NextFu
 
     const { email } = validation.data;
     const result = await generateSignupOtp(email);
+    
+    return res.status(result.status).json(result.body);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const requestPasswordResetOtp = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const validation = requestPasswordResetOtpSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: formatZodErrors(validation.error) });
+    }
+
+    const { email } = validation.data;
+    const result = await generatePasswordResetOtp(email);
+    
+    return res.status(result.status).json(result.body);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const resetPasswordWithOtp = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const validation = resetPasswordWithOtpSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: formatZodErrors(validation.error) });
+    }
+
+    const { email, otp, newPassword } = validation.data;
+    const result = await resetPasswordService({ email, otp, newPassword });
     
     return res.status(result.status).json(result.body);
   } catch (error) {

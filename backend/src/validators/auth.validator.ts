@@ -11,6 +11,16 @@ export const signupSchema = z.object({
   otp: z.string().min(6, 'OTP must be at least 6 characters').max(6, 'OTP must be exactly 6 characters'),
 });
 
+export const requestPasswordResetOtpSchema = z.object({
+  email: z.string().email('Invalid email address'),
+});
+
+export const resetPasswordWithOtpSchema = z.object({
+  email: z.string().email('Invalid email address'),
+  otp: z.string().min(6, 'OTP must be at least 6 characters').max(6, 'OTP must be exactly 6 characters'),
+  newPassword: z.string().min(8, 'New password must be at least 8 characters'),
+});
+
 export const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(1, 'Password is required'),

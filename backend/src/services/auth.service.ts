@@ -5,11 +5,13 @@ import { JWT_SECRET } from '../constants/index.js';
 import { createUser, findUserByEmail, findUserById, updateUserVaultPinHash, updateUserPasswordHash } from '../repositories/user.repository.js';
 import { hashIp } from '../lib/ipHash.js';
 import { createRefreshToken, findRefreshTokenById, markTokenReplaced, revokeAllRefreshTokensForUser } from '../repositories/refresh.repository.js';
-import { sendOtpEmail, sendRegistrationEmail } from './email.service.js';
+import { sendOtpEmail, sendRegistrationEmail, sendVaultPinChangeEmail, sendPasswordChangeEmail, sendPasswordResetOtpEmail } from './email.service.js';
 
 const SALT_ROUNDS = 10;
+const MAX_OTP_ATTEMPTS = 5;
 
-const otpCache = new Map<string, { otp: string; expiresAt: number }>();
+const otpCache = new Map<string, { otp: string; expiresAt: number; attempts: number }>();
+const resetOtpCache = new Map<string, { otp: string; expiresAt: number; attempts: number }>();
 
 export const generateSignupOtp = async (email: string) => {
   const existingUser = await findUserByEmail(email);
@@ -24,7 +26,7 @@ export const generateSignupOtp = async (email: string) => {
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
   const expiresAt = Date.now() + 10 * 60 * 1000; // 10 mins
 
-  otpCache.set(email, { otp, expiresAt });
+  otpCache.set(email, { otp, expiresAt, attempts: 0 });
 
   // Automatically clear the OTP from memory after 10 minutes
   setTimeout(() => {
@@ -46,6 +48,45 @@ export const generateSignupOtp = async (email: string) => {
   return {
     status: 200,
     body: { message: 'OTP sent successfully' },
+  };
+};
+
+export const generatePasswordResetOtp = async (email: string) => {
+  const existingUser = await findUserByEmail(email);
+
+  if (!existingUser) {
+    // Return a generic success message even if the user doesn't exist to prevent email enumeration
+    return {
+      status: 200,
+      body: { message: 'If that email address is in our database, we will send you an email to reset your password.' },
+    };
+  }
+
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiresAt = Date.now() + 10 * 60 * 1000; // 10 mins
+
+  resetOtpCache.set(email, { otp, expiresAt, attempts: 0 });
+
+  // Automatically clear the OTP from memory after 10 minutes
+  setTimeout(() => {
+    const cached = resetOtpCache.get(email);
+    if (cached && cached.expiresAt === expiresAt) {
+      resetOtpCache.delete(email);
+    }
+  }, 10 * 60 * 1000);
+
+  try {
+    await sendPasswordResetOtpEmail(email, otp);
+  } catch (err) {
+    return {
+      status: 500,
+      body: { error: 'Failed to send OTP email' },
+    };
+  }
+
+  return {
+    status: 200,
+    body: { message: 'If that email address is in our database, we will send you an email to reset your password.' },
   };
 };
 
@@ -77,9 +118,17 @@ export const signupUser = async (
   }
 
   if (cached.otp !== input.otp) {
+    cached.attempts += 1;
+    if (cached.attempts >= MAX_OTP_ATTEMPTS) {
+      otpCache.delete(input.email);
+      return {
+        status: 400,
+        body: { error: 'Too many failed attempts. Please request a new OTP.' },
+      };
+    }
     return {
       status: 400,
-      body: { error: 'Invalid OTP' },
+      body: { error: `Invalid OTP. You have ${MAX_OTP_ATTEMPTS - cached.attempts} attempts left.` },
     };
   }
 
@@ -229,7 +278,55 @@ export const changeUserPassword = async (input: { userId: string; oldPassword: s
   const newHash = await bcrypt.hash(input.newPassword, SALT_ROUNDS);
   await updateUserPasswordHash(user.id, newHash);
 
+  // Send the notification email (non-blocking)
+  sendPasswordChangeEmail(user.email).catch(err => {
+    console.error('Failed to send password change email:', err);
+  });
+
   return { status: 200, body: { message: 'Password changed successfully' } };
+};
+
+export const resetPasswordWithOtp = async (input: { email: string; otp: string; newPassword: string }) => {
+  const cached = resetOtpCache.get(input.email);
+
+  if (!cached || cached.expiresAt < Date.now()) {
+    return {
+      status: 400,
+      body: { error: 'OTP expired or not requested' },
+    };
+  }
+
+  if (cached.otp !== input.otp) {
+    cached.attempts += 1;
+    if (cached.attempts >= MAX_OTP_ATTEMPTS) {
+      resetOtpCache.delete(input.email);
+      return {
+        status: 400,
+        body: { error: 'Too many failed attempts. Please request a new OTP.' },
+      };
+    }
+    return {
+      status: 400,
+      body: { error: `Invalid OTP. You have ${MAX_OTP_ATTEMPTS - cached.attempts} attempts left.` },
+    };
+  }
+
+  const user = await findUserByEmail(input.email);
+  if (!user) {
+    return { status: 404, body: { error: 'User not found' } };
+  }
+
+  resetOtpCache.delete(input.email);
+
+  const newHash = await bcrypt.hash(input.newPassword, SALT_ROUNDS);
+  await updateUserPasswordHash(user.id, newHash);
+
+  // Send the notification email (non-blocking)
+  sendPasswordChangeEmail(user.email).catch(err => {
+    console.error('Failed to send password change email:', err);
+  });
+
+  return { status: 200, body: { message: 'Password reset successfully' } };
 };
 
 export const resetVaultPin = async (input: { userId: string; password: string; newPin: string }) => {
@@ -246,5 +343,11 @@ export const resetVaultPin = async (input: { userId: string; password: string; n
 
   const vaultPinHash = await bcrypt.hash(input.newPin, SALT_ROUNDS);
   await updateUserVaultPinHash(input.userId, vaultPinHash);
+
+  // Send the notification email (non-blocking)
+  sendVaultPinChangeEmail(user.email).catch(err => {
+    console.error('Failed to send vault PIN change email:', err);
+  });
+
   return { status: 200, body: { message: 'Vault PIN reset successfully' } };
 };

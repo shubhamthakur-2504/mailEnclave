@@ -138,3 +138,117 @@ export const sendOtpEmail = async (to: string, otp: string) => {
 
   return transporter.sendMail(mailOptions);
 };
+
+/**
+ * Send Password Reset OTP Email
+ */
+export const sendPasswordResetOtpEmail = async (to: string, otp: string) => {
+  const mailOptions = {
+    from: defaultFrom,
+    to,
+    subject: 'Password Reset OTP',
+    html: `
+      <div style="background-color: #f8fafc; padding: 40px 20px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+          
+          <!-- Header -->
+          <div style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); padding: 32px; text-align: center;">
+            <h1 style="color: #ffffff; font-size: 24px; font-weight: 800; margin: 0; letter-spacing: -0.025em;">Password Reset</h1>
+          </div>
+
+          <!-- Body -->
+          <div style="padding: 40px 32px; text-align: center;">
+            <p style="font-size: 16px; line-height: 1.6; color: #334155; margin: 0 0 24px 0;">We received a request to reset your password. Please use the following One-Time Password (OTP) to complete the reset. This code is valid for 10 minutes.</p>
+            
+            <div style="background-color: #f1f5f9; padding: 24px; border-radius: 12px; margin-bottom: 32px; border: 1px solid #e2e8f0;">
+              <h2 style="font-size: 36px; letter-spacing: 8px; color: #0f172a; margin: 0; font-weight: 800;">${otp}</h2>
+            </div>
+
+            <p style="font-size: 14px; color: #64748b; margin: 0;">Do not share this code with anyone. If you didn't request a password reset, you can safely ignore this email.</p>
+          </div>
+          
+        </div>
+      </div>
+    `,
+  };
+
+  return transporter.sendMail(mailOptions);
+};
+
+/**
+ * Send Vault PIN Change Email
+ */
+export const sendVaultPinChangeEmail = async (to: string) => {
+  const mailOptions = {
+    from: defaultFrom,
+    to,
+    subject: 'Security Alert: Vault PIN Changed',
+    html: `
+      <div style="background-color: #f8fafc; padding: 40px 20px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+          
+          <!-- Header -->
+          <div style="background: linear-gradient(135deg, #e11d48 0%, #be123c 100%); padding: 32px; text-align: center;">
+            <h1 style="color: #ffffff; font-size: 24px; font-weight: 800; margin: 0; letter-spacing: -0.025em;">Security Alert</h1>
+          </div>
+
+          <!-- Body -->
+          <div style="padding: 40px 32px;">
+            <p style="font-size: 16px; line-height: 1.6; color: #334155; margin: 0 0 16px 0;">Hello,</p>
+            <p style="font-size: 16px; line-height: 1.6; color: #334155; margin: 0 0 24px 0;">This is a notification that the <strong>Vault PIN</strong> for your MailEnclave account has recently been changed.</p>
+            
+            <div style="background-color: #fef2f2; border-left: 4px solid #e11d48; padding: 16px; border-radius: 0 8px 8px 0; margin-bottom: 32px;">
+              <p style="color: #9f1239; font-size: 15px; margin: 0;"><strong>Didn't make this change?</strong><br>If you did not authorize this action, please secure your account immediately by changing your account password.</p>
+            </div>
+
+            <!-- Footer Text -->
+            <p style="font-size: 15px; color: #64748b; margin: 0 0 4px 0;">Best Regards,</p>
+            <p style="font-size: 16px; font-weight: 700; color: #0f172a; margin: 0;">The MailEnclave Team</p>
+          </div>
+          
+        </div>
+      </div>
+    `,
+  };
+
+  return transporter.sendMail(mailOptions);
+};
+
+/**
+ * Send Password Change Email
+ */
+export const sendPasswordChangeEmail = async (to: string) => {
+  const mailOptions = {
+    from: defaultFrom,
+    to,
+    subject: 'Security Alert: Account Password Changed',
+    html: `
+      <div style="background-color: #f8fafc; padding: 40px 20px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+          
+          <!-- Header -->
+          <div style="background: linear-gradient(135deg, #e11d48 0%, #be123c 100%); padding: 32px; text-align: center;">
+            <h1 style="color: #ffffff; font-size: 24px; font-weight: 800; margin: 0; letter-spacing: -0.025em;">Security Alert</h1>
+          </div>
+
+          <!-- Body -->
+          <div style="padding: 40px 32px;">
+            <p style="font-size: 16px; line-height: 1.6; color: #334155; margin: 0 0 16px 0;">Hello,</p>
+            <p style="font-size: 16px; line-height: 1.6; color: #334155; margin: 0 0 24px 0;">This is a notification that the <strong>password</strong> for your MailEnclave account was just changed.</p>
+            
+            <div style="background-color: #fef2f2; border-left: 4px solid #e11d48; padding: 16px; border-radius: 0 8px 8px 0; margin-bottom: 32px;">
+              <p style="color: #9f1239; font-size: 15px; margin: 0;"><strong>Didn't make this change?</strong><br>If you did not authorize this action, please contact support or immediately reset your password using the "Forgot Password" option on the login page to re-secure your account.</p>
+            </div>
+
+            <!-- Footer Text -->
+            <p style="font-size: 15px; color: #64748b; margin: 0 0 4px 0;">Best Regards,</p>
+            <p style="font-size: 16px; font-weight: 700; color: #0f172a; margin: 0;">The MailEnclave Team</p>
+          </div>
+          
+        </div>
+      </div>
+    `,
+  };
+
+  return transporter.sendMail(mailOptions);
+};
