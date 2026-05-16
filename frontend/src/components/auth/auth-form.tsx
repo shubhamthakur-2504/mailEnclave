@@ -11,7 +11,7 @@ import { ArrowRight, LockKeyhole, Mail } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { loginRequest, signupRequest, sendSignupOtpRequest } from "@/lib/api/auth-api"
+import { loginRequest, signupRequest, sendSignupOtpRequest, sendPasswordResetOtpRequest, resetPasswordWithOtpRequest } from "@/lib/api/auth-api"
 import { loginFormSchema, registerFormSchema } from "@/lib/validators/auth"
 import { useAuthStore } from "@/stores/auth-store"
 import type { LoginFormValues, RegisterFormValues } from "@/lib/validators/auth"
@@ -81,6 +81,12 @@ export default function AuthForm({ mode }: AuthFormProps) {
   const [showOtpDialog, setShowOtpDialog] = useState(false)
   const [pendingValues, setPendingValues] = useState<AuthFormValues | null>(null)
   const [otp, setOtp] = useState("")
+
+  const [showForgotDialog, setShowForgotDialog] = useState(false)
+  const [forgotStep, setForgotStep] = useState<"email" | "reset">("email")
+  const [forgotEmail, setForgotEmail] = useState("")
+  const [forgotOtp, setForgotOtp] = useState("")
+  const [forgotNewPassword, setForgotNewPassword] = useState("")
   const schema = useMemo(() => (mode === "login" ? loginFormSchema : registerFormSchema), [mode])
   const copy = copyMap[mode]
 
@@ -129,6 +135,27 @@ export default function AuthForm({ mode }: AuthFormProps) {
       toast.success("Account created successfully")
       router.push("/dashboard")
       router.refresh()
+    },
+    onError: (error: unknown) => toast.error(getAuthErrorMessage(error)),
+  })
+
+  const sendForgotOtpMutation = useMutation({
+    mutationFn: (email: string) => sendPasswordResetOtpRequest(email),
+    onSuccess: () => {
+      setForgotStep("reset")
+      toast.success("If this email is registered, an OTP has been sent.")
+    },
+    onError: (error: unknown) => toast.error(getAuthErrorMessage(error)),
+  })
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: () => resetPasswordWithOtpRequest(forgotEmail, forgotOtp, forgotNewPassword),
+    onSuccess: () => {
+      setShowForgotDialog(false)
+      setForgotStep("email")
+      setForgotOtp("")
+      setForgotNewPassword("")
+      toast.success("Password reset successfully. You can now sign in.")
     },
     onError: (error: unknown) => toast.error(getAuthErrorMessage(error)),
   })
@@ -213,6 +240,26 @@ export default function AuthForm({ mode }: AuthFormProps) {
             {form.formState.errors.password ? (
               <span className="text-xs text-destructive">{form.formState.errors.password.message}</span>
             ) : null}
+            {mode === "login" ? (
+              <div className="flex justify-end pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const currentEmail = form.getValues("email")
+                    if (currentEmail && !form.formState.errors.email) {
+                      setForgotEmail(currentEmail)
+                    } else {
+                      setForgotEmail("")
+                    }
+                    setForgotStep("email")
+                    setShowForgotDialog(true)
+                  }}
+                  className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors"
+                >
+                  Forgot password?
+                </button>
+              </div>
+            ) : null}
           </label>
 
           {showConfirmPassword ? (
@@ -284,6 +331,79 @@ export default function AuthForm({ mode }: AuthFormProps) {
             >
               {registerMutation.isPending ? "Verifying..." : "Verify & Create Account"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showForgotDialog} onOpenChange={(open) => !sendForgotOtpMutation.isPending && !resetPasswordMutation.isPending && setShowForgotDialog(open)}>
+        <DialogContent className="backdrop-blur-md">
+          <DialogHeader>
+            <DialogTitle>Reset Password</DialogTitle>
+            <DialogDescription>
+              {forgotStep === "email" 
+                ? "Enter your email address to receive a password reset code." 
+                : `We've sent a 6-digit code to ${forgotEmail}.`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 backdrop-blur-sm space-y-4">
+            {forgotStep === "email" ? (
+              <label className="block space-y-2">
+                <span className="text-sm font-medium text-foreground">Email Address</span>
+                <input
+                  type="email"
+                  className={fieldClassName}
+                  placeholder="you@company.com"
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  disabled={sendForgotOtpMutation.isPending}
+                />
+              </label>
+            ) : (
+              <>
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-foreground">One-Time Password</span>
+                  <input
+                    type="text"
+                    maxLength={6}
+                    className={fieldClassName}
+                    placeholder="000000"
+                    value={forgotOtp}
+                    onChange={(e) => setForgotOtp(e.target.value)}
+                    disabled={resetPasswordMutation.isPending}
+                  />
+                </label>
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-foreground">New Password</span>
+                  <input
+                    type="password"
+                    className={fieldClassName}
+                    placeholder="At least 8 characters"
+                    value={forgotNewPassword}
+                    onChange={(e) => setForgotNewPassword(e.target.value)}
+                    disabled={resetPasswordMutation.isPending}
+                  />
+                </label>
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            {forgotStep === "email" ? (
+              <Button
+                onClick={() => sendForgotOtpMutation.mutate(forgotEmail)}
+                disabled={!forgotEmail || !forgotEmail.includes("@") || sendForgotOtpMutation.isPending}
+                className="rounded-xl"
+              >
+                {sendForgotOtpMutation.isPending ? "Sending..." : "Send Reset Code"}
+              </Button>
+            ) : (
+              <Button
+                onClick={() => resetPasswordMutation.mutate()}
+                disabled={forgotOtp.length !== 6 || forgotNewPassword.length < 8 || resetPasswordMutation.isPending}
+                className="rounded-xl"
+              >
+                {resetPasswordMutation.isPending ? "Resetting..." : "Reset Password"}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

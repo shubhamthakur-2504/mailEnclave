@@ -23,6 +23,16 @@ export const sendSignupOtpRequest = async (payload: AuthCredentials) => {
   return data
 }
 
+export const sendPasswordResetOtpRequest = async (email: string) => {
+  const { data } = await rawApi.post<{ message: string }>("/auth/password-reset/otp", { email })
+  return data
+}
+
+export const resetPasswordWithOtpRequest = async (email: string, otp: string, newPassword: string) => {
+  const { data } = await rawApi.post<{ message: string }>("/auth/password-reset", { email, otp, newPassword })
+  return data
+}
+
 export const signupRequest = async (payload: AuthCredentials & { otp: string }) => {
   const { data } = await rawApi.post<AuthApiResponse>("/auth/signup", payload)
   const session = normalizeSession(data)
