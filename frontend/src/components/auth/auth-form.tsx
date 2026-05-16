@@ -10,7 +10,8 @@ import { isAxiosError } from "axios"
 import { ArrowRight, LockKeyhole, Mail } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
-import { loginRequest, signupRequest } from "@/lib/api/auth-api"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { loginRequest, signupRequest, sendSignupOtpRequest } from "@/lib/api/auth-api"
 import { loginFormSchema, registerFormSchema } from "@/lib/validators/auth"
 import { useAuthStore } from "@/stores/auth-store"
 import type { LoginFormValues, RegisterFormValues } from "@/lib/validators/auth"
@@ -77,6 +78,9 @@ export default function AuthForm({ mode }: AuthFormProps) {
   const router = useRouter()
   const setSession = useAuthStore((state) => state.setSession)
   const [mounted, setMounted] = useState(false)
+  const [showOtpDialog, setShowOtpDialog] = useState(false)
+  const [pendingValues, setPendingValues] = useState<AuthFormValues | null>(null)
+  const [otp, setOtp] = useState("")
   const schema = useMemo(() => (mode === "login" ? loginFormSchema : registerFormSchema), [mode])
   const copy = copyMap[mode]
 
@@ -93,24 +97,51 @@ export default function AuthForm({ mode }: AuthFormProps) {
     },
   })
 
-  const mutation = useMutation({
-    mutationFn: async (values: AuthFormValues) => {
-      const payload = { email: values.email, password: values.password }
-      return mode === "login" ? loginRequest(payload) : signupRequest(payload)
-    },
+  const loginMutation = useMutation({
+    mutationFn: (values: AuthFormValues) => loginRequest({ email: values.email, password: values.password }),
     onSuccess: (session) => {
       setSession(session)
-      toast.success(mode === "login" ? "Signed in successfully" : "Account created successfully")
+      toast.success("Signed in successfully")
       router.push("/dashboard")
       router.refresh()
     },
-    onError: (error: unknown) => {
-      const message = getAuthErrorMessage(error)
-      toast.error(message)
-    },
+    onError: (error: unknown) => toast.error(getAuthErrorMessage(error)),
   })
 
-  const onSubmit = form.handleSubmit((values) => mutation.mutate(values))
+  const sendOtpMutation = useMutation({
+    mutationFn: (values: AuthFormValues) => sendSignupOtpRequest({ email: values.email, password: values.password }),
+    onSuccess: (_, variables) => {
+      setPendingValues(variables)
+      setShowOtpDialog(true)
+      toast.success("OTP sent to your email")
+    },
+    onError: (error: unknown) => toast.error(getAuthErrorMessage(error)),
+  })
+
+  const registerMutation = useMutation({
+    mutationFn: (otpValue: string) => {
+      if (!pendingValues) throw new Error("No pending values")
+      return signupRequest({ email: pendingValues.email, password: pendingValues.password, otp: otpValue })
+    },
+    onSuccess: (session) => {
+      setShowOtpDialog(false)
+      setSession(session)
+      toast.success("Account created successfully")
+      router.push("/dashboard")
+      router.refresh()
+    },
+    onError: (error: unknown) => toast.error(getAuthErrorMessage(error)),
+  })
+
+  const onSubmit = form.handleSubmit((values) => {
+    if (mode === "login") {
+      loginMutation.mutate(values)
+    } else {
+      sendOtpMutation.mutate(values)
+    }
+  })
+
+  const isPending = loginMutation.isPending || sendOtpMutation.isPending
   const showConfirmPassword = mode === "register"
 
   if (!mounted) {
@@ -207,10 +238,10 @@ export default function AuthForm({ mode }: AuthFormProps) {
 
           <Button
             type="submit"
-            className="w-full rounded-xl py-5 text-sm font-semibold normal-case tracking-normal transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_36px_rgba(91,106,245,0.22)]"
-            disabled={mutation.isPending}
+            className="w-full rounded-xl py-5 text-sm font-semibold normalcase tracking-normal transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_36px_rgba(91,106,245,0.22)]"
+            disabled={isPending}
           >
-            {mutation.isPending ? "Please wait..." : copy.submitLabel}
+            {isPending ? "Please wait..." : copy.submitLabel}
             <ArrowRight className="size-4" />
           </Button>
         </form>
@@ -222,6 +253,40 @@ export default function AuthForm({ mode }: AuthFormProps) {
           </Link>
         </p>
       </section>
+
+      <Dialog open={showOtpDialog} onOpenChange={(open) => !registerMutation.isPending && setShowOtpDialog(open)}>
+        <DialogContent className="backdrop-blur-md">
+          <DialogHeader>
+            <DialogTitle>Verify your email</DialogTitle>
+            <DialogDescription>
+              We've sent a 6-digit one-time password to {pendingValues?.email}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 backdrop-blur-sm">
+            <label className="block space-y-2">
+              <span className="text-sm font-medium text-foreground">One-Time Password</span>
+              <input
+                type="text"
+                maxLength={6}
+                className={fieldClassName}
+                placeholder="000000"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                disabled={registerMutation.isPending}
+              />
+            </label>
+          </div>
+          <DialogFooter>
+            <Button
+              onClick={() => registerMutation.mutate(otp)}
+              disabled={otp.length !== 6 || registerMutation.isPending}
+              className="rounded-xl"
+            >
+              {registerMutation.isPending ? "Verifying..." : "Verify & Create Account"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

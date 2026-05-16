@@ -18,7 +18,12 @@ const normalizeSession = (data: AuthApiResponse): AuthSession => ({
   user: data.user,
 })
 
-export const signupRequest = async (payload: AuthCredentials) => {
+export const sendSignupOtpRequest = async (payload: AuthCredentials) => {
+  const { data } = await rawApi.post<{ message: string }>("/auth/signup/otp", payload)
+  return data
+}
+
+export const signupRequest = async (payload: AuthCredentials & { otp: string }) => {
   const { data } = await rawApi.post<AuthApiResponse>("/auth/signup", payload)
   const session = normalizeSession(data)
   useAuthStore.getState().setSession(session)
