@@ -12,3 +12,4 @@ yarn-error.log*
 .eslintcache
 .vscode/
 frontend/tsconfig.tsbuildinfo
+.env.sentry-build-plugin
