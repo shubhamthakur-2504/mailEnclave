@@ -1,3 +1,5 @@
+import "./lib/instrument.js";
+import * as Sentry from "@sentry/node";
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
@@ -16,7 +18,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: FRONTEND_URL || true,
+    origin: FRONTEND_URL || "http://localhost:3001",
     credentials: true,
   })
 );
@@ -26,6 +28,8 @@ app.use('/health', healthRouter);
 app.use('/auth', authRouter);
 app.use('/config', configRouter);
 app.use('/emails', emailRouter);
+
+Sentry.setupExpressErrorHandler(app);
 
 app.use(errorHandler);
 

@@ -7,8 +7,8 @@
   "type": "module",
   "main": "server.js",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
-    "start": "node dist/server.js",
+    "dev": "tsx watch --import ./src/lib/instrument.ts src/server.ts",
+    "start": "node --import ./dist/lib/instrument.js dist/server.js",
     "build": "tsc",
     "prisma:migrate": "prisma migrate dev",
     "prisma:generate": "prisma generate"
@@ -16,6 +16,7 @@
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
+    "@sentry/node": "^10.53.1",
     "axios": "^1.15.2",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",

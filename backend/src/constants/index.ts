@@ -17,7 +17,7 @@ export const IP_HASH_SECRET = getEnv('IP_HASH_SECRET', false);
 
 export const NODE_ENV = process.env.NODE_ENV || 'development';
 export const IS_PROD = NODE_ENV === 'production';
-export const FRONTEND_URL: string | boolean = process.env.FRONTEND_URL || true;
+export const FRONTEND_URL: string = process.env.FRONTEND_URL || "http://localhost:3001";
 
 export const TESTMAIL_LIVEQUERY_TIMEOUT_MS = Number(process.env.TESTMAIL_LIVEQUERY_TIMEOUT_MS || Math.max(API_TIMEOUT_MS, 75000));
 export const TESTMAIL_ACTIVE_NAMESPACE_WINDOW_MS = Number(process.env.TESTMAIL_ACTIVE_NAMESPACE_WINDOW_MS || 15 * 60 * 1000);
