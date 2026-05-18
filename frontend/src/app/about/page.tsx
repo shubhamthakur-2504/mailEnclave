@@ -57,13 +57,13 @@ const limitations = [
   {
     icon: <ServerCrash className="size-5" />,
     title: "Server cold-start delay",
-    body: "Our backend runs on a free cloud hosting tier that spins down after inactivity. Your first request after idle time may take 30–60 seconds. The landing page silently wakes the server when you visit — so opening the dashboard is usually instant.",
+    body: "Our backend is deployed on Azure Container Apps and may scale to zero during periods of inactivity. Your first request after idle time may take 15–30 seconds for a cold start. The landing page silently wakes the server when you visit — so opening the dashboard is usually instant.",
     severity: "warn",
   },
   {
     icon: <Database className="size-5" />,
     title: "Database on a free tier",
-    body: "Our database also runs on a free tier with limited compute and storage. It handles everyday workloads well but may be slower under heavy concurrent load. We don't impose any artificial row limits — your storage grows as you use it.",
+    body: "Our PostgreSQL database runs on a free tier with limited compute and storage. It handles everyday workloads well but may be slower under heavy concurrent load. We don't impose any artificial row limits — your storage grows as you use it.",
     severity: "warn",
   },
   {

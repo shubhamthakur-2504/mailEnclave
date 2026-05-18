@@ -35,7 +35,7 @@ const NEW_BADGE_TTL = 8000
 export default function DashboardPage() {
   const searchRef = useRef<HTMLInputElement>(null)
   const [configs, setConfigs] = useState<UserConfig[]>([])
-  const [activeNamespace, setActiveNamespace] = useState('acme-prod.testmail.app')
+  const [activeNamespace, setActiveNamespace] = useState('acme-prod')
   const [activeTag, setActiveTag] = useState<string>('all')
   const [activeView, setActiveView] = useState<DockView>('inbox')
   const [search, setSearch] = useState('')
