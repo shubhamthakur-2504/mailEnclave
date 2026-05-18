@@ -42,7 +42,7 @@ model Email {
   user       User     @relation(fields: [userId], references: [id])
   userId     String
   configId   String
-  config     UserConfig @relation(fields: [configId], references: [id])
+  config     UserConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
   testmailId String
   tag        String
   subject    String
@@ -65,7 +65,7 @@ model PrivateTag {
   userId    String
   user      User       @relation(fields: [userId], references: [id])
   configId  String
-  config    UserConfig @relation(fields: [configId], references: [id])
+  config    UserConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
 
   @@unique([configId, tag]) // A specific tag in a specific namespace can only be locked once
 }
